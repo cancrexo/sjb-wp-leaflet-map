@@ -1,0 +1,22 @@
+{
+    "name": "sjb/wp-leaflet-map",
+    "description": "Mapas interactivos con Leaflet para WordPress.",
+    "type": "wordpress-plugin",
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Daniel \"Cancrexo\" Prol",
+            "email": "cancrexo@gmail.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.3"
+    },
+    "require-dev": {
+        "php-stubs/wordpress-stubs": "^6.9"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "sort-packages": true
+    }
+}

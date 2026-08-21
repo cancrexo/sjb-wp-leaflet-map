@@ -1,0 +1,5 @@
+/* Contenedor del mapa (shortcode). */
+.sjb-leaflet-map {
+    max-width: 100%;
+    z-index: 1;
+}

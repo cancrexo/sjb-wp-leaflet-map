@@ -18,13 +18,15 @@
 
 defined( 'ABSPATH' ) || exit;
 
+require_once __DIR__ . '/includes/class-shortcodes.php';
+
 register_activation_hook( __FILE__, array( 'SJB_WP_LEAFLET_MAP', 'on_activation' ) );
 register_deactivation_hook( __FILE__, array( 'SJB_WP_LEAFLET_MAP', 'on_deactivation' ) );
 
 add_action( 'plugins_loaded', array( 'SJB_WP_LEAFLET_MAP', 'init' ) );
 
 /**
- * Plugin principal (singleton).
+ * Plugin principal (singleton): bootstrap, admin y opciones.
  */
 class SJB_WP_LEAFLET_MAP {
 
@@ -67,7 +69,7 @@ class SJB_WP_LEAFLET_MAP {
     }
 
     /**
-     * Constructor: traducciones, requisitos y hooks de administración.
+     * Constructor: traducciones, requisitos, admin y shortcodes.
      */
     public function __construct() {
         self::staticValues();
@@ -85,6 +87,8 @@ class SJB_WP_LEAFLET_MAP {
         add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
         add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_settings_link' ) );
+
+        SJB_WP_LEAFLET_MAP_Shortcodes::register();
     }
 
     /**
@@ -212,8 +216,8 @@ class SJB_WP_LEAFLET_MAP {
         if ( isset( $_POST['sjb_wp_leaflet_map_save'] ) ) {
             check_admin_referer( 'sjb_wp_leaflet_map_save_settings' );
 
-            $options                         = self::get_options();
-            $options['delete_onuninstall']   = isset( $_POST['delete_onuninstall'] ) ? 1 : 0;
+            $options                       = self::get_options();
+            $options['delete_onuninstall'] = isset( $_POST['delete_onuninstall'] ) ? 1 : 0;
             update_option( self::$noslug . '_options', $options );
             $updated = true;
         }

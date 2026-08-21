@@ -1,0 +1,1 @@
+../vendor/php-stubs/wordpress-stubs/wordpress-stubs.php
