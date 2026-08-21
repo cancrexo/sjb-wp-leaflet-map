@@ -2,7 +2,7 @@
 
 Mapas interactivos con [Leaflet](https://leafletjs.com/) para WordPress.
 
-Versión actual: **0.1.0**
+Versión actual: **1.0.0**
 
 ---
 

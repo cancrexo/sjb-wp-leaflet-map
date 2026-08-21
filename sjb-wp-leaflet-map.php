@@ -3,7 +3,7 @@
  * Plugin Name: SJB WP Leaflet Map
  * Plugin URI: https://www.sjbdixital.es
  * Description: Mapas interactivos con Leaflet para WordPress.
- * Version: 0.1.0
+ * Version: 1.0.0
  * Author: SJB Dixital
  * Author URI: https://www.sjbdixital.es
  * Requires at least: 6.0
@@ -37,7 +37,7 @@ class SJB_WP_LEAFLET_MAP {
     public static $slug;
     /** @var string */
     public static $noslug;
-    public static string $version         = '0.1.0';
+    public static string $version         = '1.0.0';
     public static string $leaflet_version = '1.9.4';
     public static string $title           = 'SJB WP Leaflet Map';
     /** Nombre del tamaño de imagen WP para el pin. */
