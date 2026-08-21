@@ -96,6 +96,29 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
                         'value'       => 'Leaflet Map',
                         'description' => __( 'Se sanitiza a un id HTML válido.', 'sjb-wp-leaflet-map' ),
                     ),
+                    array(
+                        'type'        => 'textfield',
+                        'heading'     => __( 'Latitud del marcador', 'sjb-wp-leaflet-map' ),
+                        'param_name'  => 'marker_lat',
+                        'value'       => '',
+                        'description' => __( 'Vacío = sin marcador.', 'sjb-wp-leaflet-map' ),
+                        'group'       => __( 'Marcador', 'sjb-wp-leaflet-map' ),
+                    ),
+                    array(
+                        'type'        => 'textfield',
+                        'heading'     => __( 'Longitud del marcador', 'sjb-wp-leaflet-map' ),
+                        'param_name'  => 'marker_lng',
+                        'value'       => '',
+                        'group'       => __( 'Marcador', 'sjb-wp-leaflet-map' ),
+                    ),
+                    array(
+                        'type'        => 'textarea',
+                        'heading'     => __( 'Texto del marcador', 'sjb-wp-leaflet-map' ),
+                        'param_name'  => 'marker_text',
+                        'value'       => '',
+                        'description' => __( 'Se muestra al pasar el ratón y al hacer clic.', 'sjb-wp-leaflet-map' ),
+                        'group'       => __( 'Marcador', 'sjb-wp-leaflet-map' ),
+                    ),
                 ),
             ),
         );
@@ -172,7 +195,7 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
     /**
      * Shortcode [sjb_leaflet_map]: contenedor del mapa.
      *
-     * Atributos: lat, lng, zoom, width, height, id.
+     * Atributos: lat, lng, zoom, width, height, id, marker_lat, marker_lng, marker_text.
      *
      * @param array<string, string>|string $atts Atributos del shortcode.
      */
@@ -181,12 +204,15 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
 
         $atts = shortcode_atts(
             array(
-                'lat'    => '40.4168',
-                'lng'    => '-3.7038',
-                'zoom'   => '13',
-                'width'  => '100%',
-                'height' => '400px',
-                'id'     => 'Leaflet Map',
+                'lat'         => '40.4168',
+                'lng'         => '-3.7038',
+                'zoom'        => '13',
+                'width'       => '100%',
+                'height'      => '400px',
+                'id'          => 'Leaflet Map',
+                'marker_lat'  => '',
+                'marker_lng'  => '',
+                'marker_text' => '',
             ),
             $atts,
             'sjb_leaflet_map'
@@ -207,12 +233,15 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
         );
 
         return sprintf(
-            '<div id="%1$s" class="sjb-leaflet-map" style="%2$s" data-lat="%3$s" data-lng="%4$s" data-zoom="%5$s"></div>',
+            '<div id="%1$s" class="sjb-leaflet-map" style="%2$s" data-lat="%3$s" data-lng="%4$s" data-zoom="%5$s" data-marker-lat="%6$s" data-marker-lng="%7$s" data-marker-text="%8$s"></div>',
             esc_attr( $map_id ),
             $style,
             esc_attr( $atts['lat'] ),
             esc_attr( $atts['lng'] ),
-            esc_attr( $atts['zoom'] )
+            esc_attr( $atts['zoom'] ),
+            esc_attr( $atts['marker_lat'] ),
+            esc_attr( $atts['marker_lng'] ),
+            esc_attr( $atts['marker_text'] )
         );
     }
 
