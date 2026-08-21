@@ -49,6 +49,8 @@ class SJB_WP_LEAFLET_MAP_Collections {
             name varchar(191) NOT NULL DEFAULT '',
             slug varchar(191) NOT NULL DEFAULT '',
             description text NULL,
+            icon_source varchar(20) NOT NULL DEFAULT 'inherit',
+            icon_attachment_id bigint(20) unsigned NOT NULL DEFAULT 0,
             created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
             updated_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
             PRIMARY KEY  (id),
@@ -151,7 +153,7 @@ class SJB_WP_LEAFLET_MAP_Collections {
     /**
      * Inserta o actualiza una colección. Devuelve el ID o 0 si falla.
      *
-     * @param array{id?:int,name:string,slug?:string,description?:string} $data Datos.
+     * @param array{id?:int,name:string,slug?:string,description?:string,icon_source?:string,icon_attachment_id?:int} $data Datos.
      */
     public static function save_collection( array $data ): int {
         global $wpdb;
@@ -160,7 +162,15 @@ class SJB_WP_LEAFLET_MAP_Collections {
         $name        = sanitize_text_field( $data['name'] ?? '' );
         $slug_input  = isset( $data['slug'] ) ? sanitize_title( (string) $data['slug'] ) : '';
         $description = sanitize_textarea_field( $data['description'] ?? '' );
-        $now         = current_time( 'mysql' );
+        $icon_source = sanitize_key( (string) ( $data['icon_source'] ?? 'inherit' ) );
+        if ( ! in_array( $icon_source, array( 'inherit', 'leaflet', 'media' ), true ) ) {
+            $icon_source = 'inherit';
+        }
+        $icon_attachment_id = absint( $data['icon_attachment_id'] ?? 0 );
+        if ( 'media' !== $icon_source ) {
+            $icon_attachment_id = 0;
+        }
+        $now = current_time( 'mysql' );
 
         if ( '' === $name ) {
             return 0;
@@ -174,33 +184,32 @@ class SJB_WP_LEAFLET_MAP_Collections {
 
         $table = self::table_collections();
 
+        $row = array(
+            'name'               => $name,
+            'slug'               => $slug,
+            'description'        => $description,
+            'icon_source'        => $icon_source,
+            'icon_attachment_id' => $icon_attachment_id,
+            'updated_at'         => $now,
+        );
+
         if ( $id > 0 && self::get_collection( $id ) ) {
             $wpdb->update(
                 $table,
-                array(
-                    'name'        => $name,
-                    'slug'        => $slug,
-                    'description' => $description,
-                    'updated_at'  => $now,
-                ),
+                $row,
                 array( 'id' => $id ),
-                array( '%s', '%s', '%s', '%s' ),
+                array( '%s', '%s', '%s', '%s', '%d', '%s' ),
                 array( '%d' )
             );
 
             return $id;
         }
 
+        $row['created_at'] = $now;
         $wpdb->insert(
             $table,
-            array(
-                'name'        => $name,
-                'slug'        => $slug,
-                'description' => $description,
-                'created_at'  => $now,
-                'updated_at'  => $now,
-            ),
-            array( '%s', '%s', '%s', '%s', '%s' )
+            $row,
+            array( '%s', '%s', '%s', '%s', '%d', '%s', '%s' )
         );
 
         return (int) $wpdb->insert_id;
@@ -325,6 +334,67 @@ class SJB_WP_LEAFLET_MAP_Collections {
         }
 
         return $out;
+    }
+
+    /**
+     * Resuelve el icono del mapa: colección (si hay) o ajustes globales.
+     *
+     * @param object|null $collection Colección o null (mapa simple / heredar).
+     * @return array{source:string,url:string,width:int,height:int}
+     */
+    public static function resolve_map_icon( ?object $collection = null ): array {
+        $source = 'leaflet';
+        $att_id = 0;
+
+        $coll_source = ( $collection && isset( $collection->icon_source ) )
+            ? sanitize_key( (string) $collection->icon_source )
+            : 'inherit';
+
+        if ( 'leaflet' === $coll_source ) {
+            $source = 'leaflet';
+        } elseif ( 'media' === $coll_source ) {
+            $source = 'media';
+            $att_id = isset( $collection->icon_attachment_id ) ? absint( $collection->icon_attachment_id ) : 0;
+        } else {
+            $options = SJB_WP_LEAFLET_MAP::get_options();
+            $source  = isset( $options['marker_icon_source'] ) ? sanitize_key( (string) $options['marker_icon_source'] ) : 'leaflet';
+            if ( ! in_array( $source, array( 'leaflet', 'media' ), true ) ) {
+                $source = 'leaflet';
+            }
+            $att_id = isset( $options['marker_icon_attachment'] ) ? absint( $options['marker_icon_attachment'] ) : 0;
+        }
+
+        if ( 'media' === $source && $att_id > 0 ) {
+            $img = wp_get_attachment_image_src( $att_id, 'full' );
+            if ( is_array( $img ) && ! empty( $img[0] ) ) {
+                return array(
+                    'source' => 'media',
+                    'url'    => (string) $img[0],
+                    'width'  => isset( $img[1] ) ? (int) $img[1] : 0,
+                    'height' => isset( $img[2] ) ? (int) $img[2] : 0,
+                );
+            }
+        }
+
+        return array(
+            'source' => 'leaflet',
+            'url'    => '',
+            'width'  => 0,
+            'height' => 0,
+        );
+    }
+
+    /**
+     * Colección por ID o slug.
+     *
+     * @param int|string $id_or_slug ID o slug.
+     */
+    public static function get_collection_by_ref( $id_or_slug ): ?object {
+        if ( is_numeric( $id_or_slug ) && (int) $id_or_slug > 0 ) {
+            return self::get_collection( (int) $id_or_slug );
+        }
+
+        return self::get_collection_by_slug( (string) $id_or_slug );
     }
 
     /**

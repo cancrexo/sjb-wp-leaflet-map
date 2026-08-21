@@ -390,8 +390,10 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
             esc_attr( $height )
         );
 
+        $icon_attrs = self::build_icon_data_attrs( null );
+
         return sprintf(
-            '<div id="%1$s" class="sjb-leaflet-map" style="%2$s" data-lat="%3$s" data-lng="%4$s" data-zoom="%5$s" data-marker-lat="%6$s" data-marker-lng="%7$s" data-marker-text="%8$s" data-marker-mode="both"></div>',
+            '<div id="%1$s" class="sjb-leaflet-map" style="%2$s" data-lat="%3$s" data-lng="%4$s" data-zoom="%5$s" data-marker-lat="%6$s" data-marker-lng="%7$s" data-marker-text="%8$s" data-marker-mode="both"%9$s></div>',
             esc_attr( $map_id ),
             $style,
             esc_attr( $atts['lat'] ),
@@ -399,7 +401,8 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
             esc_attr( $zoom ),
             esc_attr( $atts['marker_lat'] ),
             esc_attr( $atts['marker_lng'] ),
-            esc_attr( $atts['marker_text'] )
+            esc_attr( $atts['marker_text'] ),
+            $icon_attrs
         );
     }
 
@@ -442,9 +445,11 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
             esc_attr( $height )
         );
 
-        $markers = array();
+        $collection = null;
+        $markers    = array();
         if ( '' !== trim( (string) $atts['collection'] ) && class_exists( 'SJB_WP_LEAFLET_MAP_Collections' ) ) {
-            $markers = SJB_WP_LEAFLET_MAP_Collections::get_map_markers( $atts['collection'] );
+            $collection = SJB_WP_LEAFLET_MAP_Collections::get_collection_by_ref( $atts['collection'] );
+            $markers    = SJB_WP_LEAFLET_MAP_Collections::get_map_markers( $atts['collection'] );
         }
 
         $markers_json = wp_json_encode(
@@ -455,14 +460,40 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
             $markers_json = '[]';
         }
 
+        $icon_attrs = self::build_icon_data_attrs( $collection );
+
         return sprintf(
-            '<div id="%1$s" class="sjb-leaflet-map" style="%2$s" data-lat="%3$s" data-lng="%4$s" data-zoom="%5$s" data-markers="%6$s"></div>',
+            '<div id="%1$s" class="sjb-leaflet-map" style="%2$s" data-lat="%3$s" data-lng="%4$s" data-zoom="%5$s" data-markers="%6$s"%7$s></div>',
             esc_attr( $map_id ),
             $style,
             esc_attr( $atts['lat'] ),
             esc_attr( $atts['lng'] ),
             esc_attr( $zoom ),
-            esc_attr( $markers_json )
+            esc_attr( $markers_json ),
+            $icon_attrs
+        );
+    }
+
+    /**
+     * Atributos data-icon-* si hay imagen personalizada.
+     *
+     * @param object|null $collection Colección o null.
+     */
+    private static function build_icon_data_attrs( ?object $collection ): string {
+        if ( ! class_exists( 'SJB_WP_LEAFLET_MAP_Collections' ) ) {
+            return '';
+        }
+
+        $icon = SJB_WP_LEAFLET_MAP_Collections::resolve_map_icon( $collection );
+        if ( 'media' !== $icon['source'] || '' === $icon['url'] ) {
+            return '';
+        }
+
+        return sprintf(
+            ' data-icon-url="%1$s" data-icon-width="%2$d" data-icon-height="%3$d"',
+            esc_attr( $icon['url'] ),
+            (int) $icon['width'],
+            (int) $icon['height']
         );
     }
 

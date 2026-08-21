@@ -124,8 +124,10 @@ class SJB_WP_LEAFLET_MAP {
      */
     public static function default_options(): array {
         return array(
-            'delete_onuninstall' => 0,
-            'version'            => self::$version,
+            'delete_onuninstall'     => 0,
+            'version'                => self::$version,
+            'marker_icon_source'     => 'leaflet',
+            'marker_icon_attachment' => 0,
         );
     }
 
@@ -184,6 +186,8 @@ class SJB_WP_LEAFLET_MAP {
             return;
         }
 
+        wp_enqueue_media();
+
         $bootstrap = self::$path2assets . 'vendor/bootstrap/';
 
         wp_enqueue_style(
@@ -239,7 +243,11 @@ class SJB_WP_LEAFLET_MAP {
                     'duplicateTodo'     => __( 'Duplicar: pendiente de implementar.', 'sjb-wp-leaflet-map' ),
                     'markerActive'      => __( 'Activo (clic para desactivar)', 'sjb-wp-leaflet-map' ),
                     'markerInactive'    => __( 'Inactivo (clic para activar)', 'sjb-wp-leaflet-map' ),
+                    'iconSelect'        => __( 'Seleccionar imagen', 'sjb-wp-leaflet-map' ),
+                    'iconChange'        => __( 'Cambiar imagen', 'sjb-wp-leaflet-map' ),
+                    'iconTitle'         => __( 'Icono del marcador', 'sjb-wp-leaflet-map' ),
                 ),
+                'leafletIconUrl' => self::$path2assets . 'vendor/leaflet/images/marker-icon.png',
             )
         );
     }

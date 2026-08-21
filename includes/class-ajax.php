@@ -84,6 +84,18 @@ class SJB_WP_LEAFLET_MAP_Ajax {
 
         $options                       = SJB_WP_LEAFLET_MAP::get_options();
         $options['delete_onuninstall'] = isset( $_POST['delete_onuninstall'] ) ? 1 : 0;
+
+        $icon_source = isset( $_POST['marker_icon_source'] ) ? sanitize_key( (string) wp_unslash( $_POST['marker_icon_source'] ) ) : 'leaflet';
+        if ( ! in_array( $icon_source, array( 'leaflet', 'media' ), true ) ) {
+            $icon_source = 'leaflet';
+        }
+        $icon_attachment = absint( $_POST['marker_icon_attachment'] ?? 0 );
+        if ( 'media' !== $icon_source ) {
+            $icon_attachment = 0;
+        }
+
+        $options['marker_icon_source']     = $icon_source;
+        $options['marker_icon_attachment'] = $icon_attachment;
         update_option( SJB_WP_LEAFLET_MAP::$noslug . '_options', $options );
 
         wp_send_json_success(
@@ -101,10 +113,12 @@ class SJB_WP_LEAFLET_MAP_Ajax {
 
         $id = SJB_WP_LEAFLET_MAP_Collections::save_collection(
             array(
-                'id'          => absint( $_POST['collection_id'] ?? 0 ),
-                'name'        => wp_unslash( (string) ( $_POST['collection_name'] ?? '' ) ),
-                'slug'        => wp_unslash( (string) ( $_POST['collection_slug'] ?? '' ) ),
-                'description' => wp_unslash( (string) ( $_POST['collection_description'] ?? '' ) ),
+                'id'                 => absint( $_POST['collection_id'] ?? 0 ),
+                'name'               => wp_unslash( (string) ( $_POST['collection_name'] ?? '' ) ),
+                'slug'               => wp_unslash( (string) ( $_POST['collection_slug'] ?? '' ) ),
+                'description'        => wp_unslash( (string) ( $_POST['collection_description'] ?? '' ) ),
+                'icon_source'        => wp_unslash( (string) ( $_POST['collection_icon_source'] ?? 'inherit' ) ),
+                'icon_attachment_id' => absint( $_POST['collection_icon_attachment'] ?? 0 ),
             )
         );
 

@@ -39,12 +39,14 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
     </p>
 
     <?php
-    $collections = SJB_WP_LEAFLET_MAP_Collections::get_collections();
+    $collections  = SJB_WP_LEAFLET_MAP_Collections::get_collections();
+    $leaflet_icon = SJB_WP_LEAFLET_MAP::$path2assets . 'vendor/leaflet/images/marker-icon.png';
     if ( $collections ) :
         ?>
         <table class="table table-striped table-bordered align-middle mb-4">
             <thead>
                 <tr>
+                    <th class="sjb-col-icon"><?php esc_html_e( 'Icono', 'sjb-wp-leaflet-map' ); ?></th>
                     <th><?php esc_html_e( 'Nombre', 'sjb-wp-leaflet-map' ); ?></th>
                     <th><?php esc_html_e( 'ID (slug)', 'sjb-wp-leaflet-map' ); ?></th>
                     <th><?php esc_html_e( 'Descripción', 'sjb-wp-leaflet-map' ); ?></th>
@@ -62,8 +64,27 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
                         ),
                         admin_url( 'options-general.php' )
                     );
+
+                    $resolved_icon = SJB_WP_LEAFLET_MAP_Collections::resolve_map_icon( $row );
+                    $icon_url      = ( 'media' === $resolved_icon['source'] && '' !== $resolved_icon['url'] )
+                        ? $resolved_icon['url']
+                        : $leaflet_icon;
+
+                    $icon_source_raw = isset( $row->icon_source ) ? sanitize_key( (string) $row->icon_source ) : 'inherit';
+                    if ( 'leaflet' === $icon_source_raw ) {
+                        $icon_title = __( 'Leaflet', 'sjb-wp-leaflet-map' );
+                    } elseif ( 'media' === $icon_source_raw ) {
+                        $icon_title = __( 'Biblioteca multimedia', 'sjb-wp-leaflet-map' );
+                    } else {
+                        $icon_title = __( 'Icono global del plugin', 'sjb-wp-leaflet-map' );
+                    }
                     ?>
                     <tr>
+                        <td class="sjb-col-icon">
+                            <span class="sjb-collection-icon-thumb" title="<?php echo esc_attr( $icon_title ); ?>">
+                                <img src="<?php echo esc_url( $icon_url ); ?>" alt="<?php echo esc_attr( $icon_title ); ?>">
+                            </span>
+                        </td>
                         <td><?php echo esc_html( $row->name ); ?></td>
                         <td><code><?php echo esc_html( $row->slug ); ?></code></td>
                         <td><?php echo esc_html( wp_html_excerpt( (string) $row->description, 80, '…' ) ); ?></td>
@@ -78,6 +99,9 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
                                     data-collection-name="<?php echo esc_attr( $row->name ); ?>"
                                     data-collection-slug="<?php echo esc_attr( $row->slug ); ?>"
                                     data-collection-description="<?php echo esc_attr( (string) $row->description ); ?>"
+                                    data-collection-icon-source="<?php echo esc_attr( isset( $row->icon_source ) ? (string) $row->icon_source : 'inherit' ); ?>"
+                                    data-collection-icon-attachment="<?php echo esc_attr( (string) ( isset( $row->icon_attachment_id ) ? (int) $row->icon_attachment_id : 0 ) ); ?>"
+                                    data-collection-icon-preview="<?php echo esc_url( ( isset( $row->icon_attachment_id ) && (int) $row->icon_attachment_id > 0 ) ? (string) wp_get_attachment_image_url( (int) $row->icon_attachment_id, 'thumbnail' ) : '' ); ?>"
                                     title="<?php esc_attr_e( 'Editar colección', 'sjb-wp-leaflet-map' ); ?>"
                                     aria-label="<?php esc_attr_e( 'Editar colección', 'sjb-wp-leaflet-map' ); ?>"
                                 >
@@ -173,9 +197,55 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
                                 <label class="form-label" for="sjb_collection_slug"><?php esc_html_e( 'ID (slug)', 'sjb-wp-leaflet-map' ); ?></label>
                                 <input class="form-control" type="text" name="collection_slug" id="sjb_collection_slug" placeholder="<?php esc_attr_e( 'Opcional: se genera desde el nombre', 'sjb-wp-leaflet-map' ); ?>">
                             </div>
-                            <div class="col-md-12 mb-0">
+                            <div class="col-md-12 mb-3">
                                 <label class="form-label" for="sjb_collection_description"><?php esc_html_e( 'Descripción', 'sjb-wp-leaflet-map' ); ?></label>
                                 <textarea class="form-control" name="collection_description" id="sjb_collection_description" rows="3"></textarea>
+                            </div>
+                            <div class="col-md-12 mb-0">
+                                <fieldset class="sjb-icon-picker" data-sjb-icon-picker>
+                                    <legend class="form-label mb-2"><?php esc_html_e( 'Icono de marcador', 'sjb-wp-leaflet-map' ); ?></legend>
+                                    <p class="form-text mt-0 mb-2">
+                                        <?php esc_html_e( 'Por defecto hereda el icono de la configuración del plugin.', 'sjb-wp-leaflet-map' ); ?>
+                                    </p>
+                                    <div class="form-check">
+                                        <input class="form-check-input sjb-icon-source" type="radio" name="collection_icon_source" id="collection_icon_source_inherit" value="inherit" checked>
+                                        <label class="form-check-label" for="collection_icon_source_inherit">
+                                            <?php esc_html_e( 'Usar el icono global del plugin', 'sjb-wp-leaflet-map' ); ?>
+                                        </label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input class="form-check-input sjb-icon-source" type="radio" name="collection_icon_source" id="collection_icon_source_leaflet" value="leaflet">
+                                        <label class="form-check-label" for="collection_icon_source_leaflet">
+                                            <?php esc_html_e( 'Icono de Leaflet (por defecto)', 'sjb-wp-leaflet-map' ); ?>
+                                        </label>
+                                    </div>
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input sjb-icon-source" type="radio" name="collection_icon_source" id="collection_icon_source_media" value="media">
+                                        <label class="form-check-label" for="collection_icon_source_media">
+                                            <?php esc_html_e( 'Imagen de la biblioteca multimedia', 'sjb-wp-leaflet-map' ); ?>
+                                        </label>
+                                    </div>
+                                    <div class="sjb-icon-media-row d-none" data-sjb-icon-media-row>
+                                        <input type="hidden" name="collection_icon_attachment" class="sjb-icon-attachment-id" id="sjb_collection_icon_attachment" value="0">
+                                        <div class="d-flex align-items-center gap-3 flex-wrap">
+                                            <div class="sjb-icon-preview" data-sjb-icon-preview>
+                                                <span class="text-muted small"><?php esc_html_e( 'Ninguna imagen seleccionada', 'sjb-wp-leaflet-map' ); ?></span>
+                                            </div>
+                                            <div class="d-flex gap-2">
+                                                <button type="button" class="btn btn-outline-primary btn-sm sjb-icon-select">
+                                                    <?php esc_html_e( 'Seleccionar imagen', 'sjb-wp-leaflet-map' ); ?>
+                                                </button>
+                                                <button type="button" class="btn btn-outline-secondary btn-sm sjb-icon-clear d-none">
+                                                    <?php esc_html_e( 'Quitar', 'sjb-wp-leaflet-map' ); ?>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="sjb-icon-leaflet-preview d-none mt-2" data-sjb-icon-leaflet-preview>
+                                        <img src="<?php echo esc_url( SJB_WP_LEAFLET_MAP::$path2assets . 'vendor/leaflet/images/marker-icon.png' ); ?>" alt="" width="25" height="41">
+                                        <span class="text-muted small ms-2"><?php esc_html_e( 'Vista previa del pin de Leaflet', 'sjb-wp-leaflet-map' ); ?></span>
+                                    </div>
+                                </fieldset>
                             </div>
                         </div>
                     </div>

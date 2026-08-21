@@ -4,6 +4,7 @@
  *
  * - Colección: data-markers = JSON [{lat,lng,text,mode}, ...]
  * - Mapa simple: data-marker-lat/lng/text + data-marker-mode
+ * - Icono: data-icon-url (+ width/height); vacío = Leaflet default
  * Modos de texto: hover | click | both | always
  * «always» usa tooltip permanente de Leaflet ({ permanent: true }).
  */
@@ -78,6 +79,44 @@
         ];
     };
 
+    /**
+     * Icono Leaflet desde data-icon-* del contenedor (o default nativo).
+     *
+     * @param {HTMLElement} el Contenedor.
+     * @returns {L.Icon|undefined}
+     */
+    const readMapIcon = (el) => {
+        const url = (el.dataset.iconUrl || '').trim();
+        if (!url) {
+            return undefined;
+        }
+
+        let width = parseInt(el.dataset.iconWidth, 10);
+        let height = parseInt(el.dataset.iconHeight, 10);
+        if (Number.isNaN(width) || width < 1) {
+            width = 25;
+        }
+        if (Number.isNaN(height) || height < 1) {
+            height = 41;
+        }
+
+        // Limitar tamaño visual en mapa (imágenes grandes de la media library).
+        const maxSide = 48;
+        if (width > maxSide || height > maxSide) {
+            const scale = maxSide / Math.max(width, height);
+            width = Math.max(1, Math.round(width * scale));
+            height = Math.max(1, Math.round(height * scale));
+        }
+
+        return L.icon({
+            iconUrl: url,
+            iconSize: [width, height],
+            iconAnchor: [Math.round(width / 2), height],
+            popupAnchor: [0, -height],
+            tooltipAnchor: [0, -Math.round(height / 2)],
+        });
+    };
+
     const initMaps = () => {
         if (typeof L === 'undefined') {
             return;
@@ -105,6 +144,8 @@
                 maxZoom: 19,
             }).addTo(map);
 
+            const icon = readMapIcon(el);
+
             readMarkers(el).forEach((item) => {
                 const mLat = parseFloat(item.lat);
                 const mLng = parseFloat(item.lng);
@@ -112,7 +153,8 @@
                     return;
                 }
 
-                const marker = L.marker([mLat, mLng]).addTo(map);
+                const opts = icon ? { icon } : undefined;
+                const marker = L.marker([mLat, mLng], opts).addTo(map);
                 bindMarkerText(marker, item.text || '', item.mode || 'both');
             });
         });

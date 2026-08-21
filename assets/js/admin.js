@@ -191,11 +191,142 @@
         return window.confirm(msg);
     }
 
+    /**
+     * Actualiza visibilidad y preview de un bloque icon-picker.
+     *
+     * @param {HTMLElement} picker Contenedor [data-sjb-icon-picker].
+     * @param {{source?:string,attachmentId?:string,previewUrl?:string}} state Estado.
+     */
+    function setIconPickerState(picker, state) {
+        if (!picker) {
+            return;
+        }
+
+        const source = state.source || 'leaflet';
+        const attachmentId = state.attachmentId || '0';
+        const previewUrl = state.previewUrl || '';
+
+        picker.querySelectorAll('.sjb-icon-source').forEach((radio) => {
+            radio.checked = radio.value === source;
+        });
+
+        const idInput = picker.querySelector('.sjb-icon-attachment-id');
+        if (idInput) {
+            idInput.value = attachmentId;
+        }
+
+        const mediaRow = picker.querySelector('[data-sjb-icon-media-row]');
+        const leafletPreview = picker.querySelector('[data-sjb-icon-leaflet-preview]');
+        if (mediaRow) {
+            mediaRow.classList.toggle('d-none', source !== 'media');
+        }
+        if (leafletPreview) {
+            leafletPreview.classList.toggle('d-none', source !== 'leaflet');
+        }
+
+        const preview = picker.querySelector('[data-sjb-icon-preview]');
+        const clearBtn = picker.querySelector('.sjb-icon-clear');
+        const selectBtn = picker.querySelector('.sjb-icon-select');
+        if (preview) {
+            if (previewUrl) {
+                preview.innerHTML = '<img src="' + previewUrl.replace(/"/g, '&quot;') + '" alt="">';
+            } else {
+                preview.innerHTML = '<span class="text-muted small">Ninguna imagen seleccionada</span>';
+            }
+        }
+        if (clearBtn) {
+            clearBtn.classList.toggle('d-none', !previewUrl);
+        }
+        if (selectBtn) {
+            selectBtn.textContent = previewUrl
+                ? (i18n.iconChange || 'Cambiar imagen')
+                : (i18n.iconSelect || 'Seleccionar imagen');
+        }
+    }
+
+    /**
+     * Media Library + radios de origen de icono.
+     *
+     * @param {HTMLElement} root Ámbito (.sjb-leaflet-admin).
+     */
+    function initIconPickers(root) {
+        root.querySelectorAll('[data-sjb-icon-picker]').forEach((picker) => {
+            picker.querySelectorAll('.sjb-icon-source').forEach((radio) => {
+                radio.addEventListener('change', () => {
+                    if (!radio.checked) {
+                        return;
+                    }
+                    const idInput = picker.querySelector('.sjb-icon-attachment-id');
+                    const preview = picker.querySelector('[data-sjb-icon-preview] img');
+                    setIconPickerState(picker, {
+                        source: radio.value,
+                        attachmentId: idInput ? idInput.value : '0',
+                        previewUrl: preview ? preview.getAttribute('src') || '' : '',
+                    });
+                });
+            });
+
+            const selectBtn = picker.querySelector('.sjb-icon-select');
+            const clearBtn = picker.querySelector('.sjb-icon-clear');
+
+            if (selectBtn) {
+                selectBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    if (!window.wp || !wp.media) {
+                        toast(i18n.errorGeneric || 'Error', 'error');
+                        return;
+                    }
+
+                    const frame = wp.media({
+                        title: i18n.iconTitle || 'Icono del marcador',
+                        button: { text: i18n.iconSelect || 'Seleccionar imagen' },
+                        library: { type: 'image' },
+                        multiple: false,
+                    });
+
+                    frame.on('select', () => {
+                        const file = frame.state().get('selection').first().toJSON();
+                        const idInput = picker.querySelector('.sjb-icon-attachment-id');
+                        const sourceMedia = picker.querySelector('.sjb-icon-source[value="media"]');
+                        if (sourceMedia) {
+                            sourceMedia.checked = true;
+                        }
+                        setIconPickerState(picker, {
+                            source: 'media',
+                            attachmentId: String(file.id || 0),
+                            previewUrl: (file.sizes && file.sizes.thumbnail && file.sizes.thumbnail.url)
+                                || file.url
+                                || '',
+                        });
+                        if (idInput) {
+                            idInput.value = String(file.id || 0);
+                        }
+                    });
+
+                    frame.open();
+                });
+            }
+
+            if (clearBtn) {
+                clearBtn.addEventListener('click', (event) => {
+                    event.preventDefault();
+                    setIconPickerState(picker, {
+                        source: 'media',
+                        attachmentId: '0',
+                        previewUrl: '',
+                    });
+                });
+            }
+        });
+    }
+
     document.addEventListener('DOMContentLoaded', () => {
         const wrap = document.querySelector('.sjb-leaflet-admin');
         if (!wrap || !ajaxUrl) {
             return;
         }
+
+        initIconPickers(wrap);
 
         wrap.addEventListener('submit', async (event) => {
             const form = event.target;
@@ -233,6 +364,7 @@
             const nameEl = document.getElementById('sjb_collection_name');
             const slugEl = document.getElementById('sjb_collection_slug');
             const descEl = document.getElementById('sjb_collection_description');
+            const iconPicker = collectionForm.querySelector('[data-sjb-icon-picker]');
 
             collectionModal.addEventListener('show.bs.modal', (event) => {
                 const trigger = event.relatedTarget;
@@ -253,6 +385,13 @@
                     if (descEl) {
                         descEl.value = trigger.getAttribute('data-collection-description') || '';
                     }
+                    if (iconPicker) {
+                        setIconPickerState(iconPicker, {
+                            source: trigger.getAttribute('data-collection-icon-source') || 'inherit',
+                            attachmentId: trigger.getAttribute('data-collection-icon-attachment') || '0',
+                            previewUrl: trigger.getAttribute('data-collection-icon-preview') || '',
+                        });
+                    }
                     if (titleEl) {
                         titleEl.textContent = i18n.collectionEdit || 'Editar colección';
                     }
@@ -265,6 +404,13 @@
                 collectionForm.reset();
                 if (idEl) {
                     idEl.value = '0';
+                }
+                if (iconPicker) {
+                    setIconPickerState(iconPicker, {
+                        source: 'inherit',
+                        attachmentId: '0',
+                        previewUrl: '',
+                    });
                 }
                 if (titleEl) {
                     titleEl.textContent = i18n.collectionNew || 'Nueva colección';

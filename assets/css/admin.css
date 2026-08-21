@@ -1,8 +1,4 @@
 /* Ajustes menores para Bootstrap 5.3 dentro de wp-admin. */
-.sjb-leaflet-admin {
-    max-width: 1100px;
-}
-
 .sjb-leaflet-admin .nav-tabs {
     margin-top: 1rem;
     margin-bottom: 0;
@@ -77,6 +73,67 @@
     margin-left: 0.5rem;
 }
 
+/*
+ * Conflicto WP: forms.css desaline verticalmente radios/checkboxes vs etiqueta.
+ * Reaplicar form-check de Bootstrap (no switch).
+ */
+.sjb-leaflet-admin .form-check:not(.form-switch) {
+    display: flex;
+    align-items: center;
+    min-height: 1.5rem;
+    padding-left: 0;
+    margin-bottom: 0.5rem;
+}
+
+.sjb-leaflet-admin .form-check:not(.form-switch) .form-check-input {
+    float: none !important;
+    flex-shrink: 0;
+    width: 1em !important;
+    height: 1em !important;
+    min-width: 1em !important;
+    margin-top: 0 !important;
+    margin-left: 0 !important;
+    margin-right: 0.5em;
+    padding: 0 !important;
+    vertical-align: middle;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    background-color: #fff !important;
+    background-image: none !important;
+    border: 1px solid rgba(0, 0, 0, 0.25) !important;
+    box-shadow: none !important;
+}
+
+.sjb-leaflet-admin .form-check:not(.form-switch) .form-check-input[type="radio"] {
+    border-radius: 50% !important;
+}
+
+.sjb-leaflet-admin .form-check:not(.form-switch) .form-check-input::before {
+    content: none !important;
+    display: none !important;
+}
+
+.sjb-leaflet-admin .form-check:not(.form-switch) .form-check-input:checked {
+    background-color: #2271b1 !important;
+    border-color: #2271b1 !important;
+    background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='2' fill='%23fff'/%3e%3c/svg%3e") !important;
+    background-repeat: no-repeat !important;
+    background-position: center !important;
+    background-size: contain !important;
+}
+
+.sjb-leaflet-admin .form-check:not(.form-switch) .form-check-input:focus {
+    border-color: #86b7fe !important;
+    outline: 0 !important;
+    box-shadow: 0 0 0 0.25rem rgba(34, 113, 177, 0.25) !important;
+}
+
+.sjb-leaflet-admin .form-check:not(.form-switch) .form-check-label {
+    margin-bottom: 0;
+    line-height: 1.4;
+    padding-top: 0;
+}
+
 .sjb-leaflet-admin .btn-primary {
     background-color: #2271b1;
     border-color: #2271b1;
@@ -110,6 +167,34 @@ body.modal-open .modal-backdrop {
     padding-right: 0.5rem;
 }
 
+/* Columna Icono de colección. */
+.sjb-leaflet-admin .sjb-col-icon {
+    width: 1%;
+    white-space: nowrap;
+    text-align: center;
+    vertical-align: middle;
+}
+
+.sjb-leaflet-admin .sjb-collection-icon-thumb {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    background: #f8f9fa;
+    padding: 0.25rem;
+}
+
+.sjb-leaflet-admin .sjb-collection-icon-thumb img {
+    max-width: 28px;
+    max-height: 28px;
+    width: auto;
+    height: auto;
+    display: block;
+}
+
 /* Botones de acción solo icono (tablas admin). */
 .sjb-leaflet-admin .sjb-icon-actions {
     white-space: nowrap;
@@ -141,12 +226,12 @@ body.modal-open .modal-backdrop {
 }
 
 .sjb-leaflet-admin .sjb-icon-btn--markers {
-    color: #2271b1;
+    color: #ff0000;
 }
 
 .sjb-leaflet-admin .sjb-icon-btn--markers:hover,
 .sjb-leaflet-admin .sjb-icon-btn--markers:focus {
-    color: #135e96;
+    color: #cc0000;
 }
 
 .sjb-leaflet-admin .sjb-icon-btn--export {
@@ -330,3 +415,47 @@ body.modal-open .modal-backdrop {
 .sjb-leaflet-toast__close:hover {
     opacity: 1;
 }
+
+/* Selector de icono de marcador (ajustes / colección). */
+.sjb-leaflet-admin .sjb-icon-preview {
+    min-width: 48px;
+    min-height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #dee2e6;
+    border-radius: 0.375rem;
+    padding: 0.35rem 0.5rem;
+    background: #f8f9fa;
+}
+
+.sjb-leaflet-admin .sjb-icon-preview img {
+    max-width: 48px;
+    max-height: 48px;
+    width: auto;
+    height: auto;
+    display: block;
+}
+
+.sjb-leaflet-admin .sjb-icon-leaflet-preview {
+    display: flex;
+    align-items: center;
+}
+
+.sjb-leaflet-admin .sjb-icon-leaflet-preview.d-none {
+    display: none !important;
+}
+
+/* Contenedor de cards en Configuración. */
+.sjb-leaflet-admin .sjb-config-cards {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    margin-bottom: 1rem;
+}
+
+.sjb-leaflet-admin .sjb-config-cards > .card {
+    flex: 1 1 280px;
+    margin-bottom: 0;
+}
+
