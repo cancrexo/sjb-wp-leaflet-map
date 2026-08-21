@@ -25,15 +25,66 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
 <?php if ( ! $collection ) : ?>
     <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-2">
         <h2 class="h4 mb-0"><?php esc_html_e( 'Colecciones de marcadores', 'sjb-wp-leaflet-map' ); ?></h2>
-        <button
-            type="button"
-            class="btn btn-primary"
-            data-bs-toggle="modal"
-            data-bs-target="#sjb-modal-collection"
-        >
-            <?php esc_html_e( 'Nueva colección', 'sjb-wp-leaflet-map' ); ?>
-        </button>
+        <div class="d-flex flex-wrap gap-2">
+            <button
+                type="button"
+                class="btn btn-outline-warning"
+                id="sjb-import-toggle"
+                aria-expanded="false"
+                aria-controls="sjb-import-panel"
+            >
+                <?php esc_html_e( 'Importar', 'sjb-wp-leaflet-map' ); ?>
+            </button>
+            <button
+                type="button"
+                class="btn btn-primary"
+                data-bs-toggle="modal"
+                data-bs-target="#sjb-modal-collection"
+            >
+                <?php esc_html_e( 'Nueva colección', 'sjb-wp-leaflet-map' ); ?>
+            </button>
+        </div>
     </div>
+
+    <div id="sjb-import-panel" class="sjb-import-panel d-none mb-3">
+        <label class="sjb-import-dropzone" id="sjb-import-dropzone" for="sjb_import_file">
+            <input
+                type="file"
+                id="sjb_import_file"
+                accept=".json,.geojson,.kml,application/json,application/geo+json,application/vnd.google-earth.kml+xml"
+            >
+            <span class="sjb-import-dropzone__icon dashicons dashicons-upload" aria-hidden="true"></span>
+            <span class="sjb-import-dropzone__title">
+                <?php esc_html_e( 'Suelta aquí los archivos', 'sjb-wp-leaflet-map' ); ?>
+            </span>
+            <span class="sjb-import-dropzone__formats">
+                <?php esc_html_e( 'Formatos: JSON (plugin), GeoJSON o KML.', 'sjb-wp-leaflet-map' ); ?>
+            </span>
+        </label>
+        <div id="sjb-import-status" class="alert alert-secondary d-none mt-3" role="status"></div>
+        <div id="sjb-import-identity" class="d-none mt-3">
+            <p class="form-text">
+                <?php esc_html_e( 'Este archivo no es un JSON propio del plugin. Indica nombre y slug para la nueva colección.', 'sjb-wp-leaflet-map' ); ?>
+            </p>
+            <div class="row">
+                <div class="col-md-6 mb-3 mb-md-0">
+                    <label class="form-label" for="sjb_import_name"><?php esc_html_e( 'Nombre', 'sjb-wp-leaflet-map' ); ?></label>
+                    <input class="form-control" type="text" id="sjb_import_name">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label" for="sjb_import_slug"><?php esc_html_e( 'ID (slug)', 'sjb-wp-leaflet-map' ); ?></label>
+                    <input class="form-control" type="text" id="sjb_import_slug" placeholder="<?php esc_attr_e( 'Opcional: se genera desde el nombre', 'sjb-wp-leaflet-map' ); ?>">
+                </div>
+            </div>
+        </div>
+        <input type="hidden" id="sjb_import_token" value="">
+        <div id="sjb-import-actions" class="d-none mt-3">
+            <button type="button" class="btn btn-warning" id="sjb-import-commit" disabled>
+                <?php esc_html_e( 'Importar', 'sjb-wp-leaflet-map' ); ?>
+            </button>
+        </div>
+    </div>
+
     <p class="text-muted">
         <?php esc_html_e( 'Crea colecciones reutilizables. Más adelante podrás asociarlas al shortcode del mapa.', 'sjb-wp-leaflet-map' ); ?>
     </p>
@@ -115,16 +166,40 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
                                 >
                                     <span class="dashicons dashicons-location" aria-hidden="true"></span>
                                 </a>
-                                <button
-                                    type="button"
-                                    class="btn btn-sm btn-link sjb-icon-btn sjb-icon-btn--export sjb-collection-export"
-                                    title="<?php esc_attr_e( 'Exportar', 'sjb-wp-leaflet-map' ); ?>"
-                                    aria-label="<?php esc_attr_e( 'Exportar', 'sjb-wp-leaflet-map' ); ?>"
-                                    data-collection-id="<?php echo esc_attr( (string) $row->id ); ?>"
-                                    data-collection-name="<?php echo esc_attr( $row->name ); ?>"
-                                >
-                                    <span class="dashicons dashicons-download" aria-hidden="true"></span>
-                                </button>
+                                <div class="dropdown d-inline-block">
+                                    <button
+                                        type="button"
+                                        class="btn btn-sm btn-link sjb-icon-btn sjb-icon-btn--export dropdown-toggle"
+                                        data-bs-toggle="dropdown"
+                                        aria-expanded="false"
+                                        title="<?php esc_attr_e( 'Exportar', 'sjb-wp-leaflet-map' ); ?>"
+                                        aria-label="<?php esc_attr_e( 'Exportar', 'sjb-wp-leaflet-map' ); ?>"
+                                    >
+                                        <span class="dashicons dashicons-download" aria-hidden="true"></span>
+                                    </button>
+                                    <ul class="dropdown-menu dropdown-menu-end">
+                                        <li>
+                                            <button type="button" class="dropdown-item sjb-collection-export" data-format="json" data-collection-id="<?php echo esc_attr( (string) $row->id ); ?>" data-collection-name="<?php echo esc_attr( $row->name ); ?>">
+                                                JSON
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button type="button" class="dropdown-item sjb-collection-export" data-format="geojson" data-collection-id="<?php echo esc_attr( (string) $row->id ); ?>" data-collection-name="<?php echo esc_attr( $row->name ); ?>">
+                                                GeoJSON
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button type="button" class="dropdown-item sjb-collection-export" data-format="kml" data-collection-id="<?php echo esc_attr( (string) $row->id ); ?>" data-collection-name="<?php echo esc_attr( $row->name ); ?>">
+                                                KML
+                                            </button>
+                                        </li>
+                                        <li>
+                                            <button type="button" class="dropdown-item sjb-collection-export" data-format="kmz" data-collection-id="<?php echo esc_attr( (string) $row->id ); ?>" data-collection-name="<?php echo esc_attr( $row->name ); ?>">
+                                                KMZ
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
                                 <button
                                     type="button"
                                     class="btn btn-sm btn-link sjb-icon-btn sjb-icon-btn--duplicate sjb-collection-duplicate"

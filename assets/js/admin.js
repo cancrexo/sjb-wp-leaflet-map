@@ -426,8 +426,9 @@
         }
 
         initMarkersTable(wrap);
+        initImportPanel(wrap);
 
-        // Stubs: exportar / duplicar colección (solo aviso de momento).
+        // Exportar colección (JSON / GeoJSON / KML / KMZ) y stub duplicar.
         wrap.addEventListener('click', (event) => {
             const target = event.target;
             if (!(target instanceof Element)) {
@@ -435,8 +436,20 @@
             }
             const exportBtn = target.closest('.sjb-collection-export');
             if (exportBtn && wrap.contains(exportBtn)) {
-                const name = exportBtn.getAttribute('data-collection-name') || '';
-                window.alert((i18n.exportTodo || 'Exportar: pendiente de implementar.') + (name ? '\n' + name : ''));
+                event.preventDefault();
+                const id = exportBtn.getAttribute('data-collection-id') || '0';
+                const format = exportBtn.getAttribute('data-format') || 'json';
+                if (!id || id === '0') {
+                    toast(i18n.exportError || 'No se pudo exportar la colección.', 'error');
+                    return;
+                }
+                const params = new URLSearchParams({
+                    action: 'sjb_wp_leaflet_map_export_collection',
+                    nonce: nonce,
+                    collection_id: id,
+                    format: format,
+                });
+                window.location.href = ajaxUrl + (ajaxUrl.indexOf('?') >= 0 ? '&' : '?') + params.toString();
                 return;
             }
             const dupBtn = target.closest('.sjb-collection-duplicate');
@@ -446,6 +459,226 @@
             }
         });
     });
+
+    /**
+     * Panel de importación: zona drag & drop, parse y commit.
+     *
+     * @param {HTMLElement} wrap Contenedor admin.
+     */
+    function initImportPanel(wrap) {
+        const panel = wrap.querySelector('#sjb-import-panel');
+        const toggle = wrap.querySelector('#sjb-import-toggle');
+        const dropzone = wrap.querySelector('#sjb-import-dropzone');
+        if (!panel || !toggle || !dropzone) {
+            return;
+        }
+
+        const fileInput = document.getElementById('sjb_import_file');
+        const tokenInput = document.getElementById('sjb_import_token');
+        const statusEl = document.getElementById('sjb-import-status');
+        const identityEl = document.getElementById('sjb-import-identity');
+        const nameInput = document.getElementById('sjb_import_name');
+        const slugInput = document.getElementById('sjb_import_slug');
+        const commitBtn = document.getElementById('sjb-import-commit');
+        const actionsEl = document.getElementById('sjb-import-actions');
+
+        let needsIdentity = false;
+        let processing = false;
+
+        const setPanelOpen = (open) => {
+            panel.classList.toggle('d-none', !open);
+            toggle.setAttribute('aria-expanded', open ? 'true' : 'false');
+            toggle.classList.toggle('active', open);
+            if (!open) {
+                resetImportUi();
+            }
+        };
+
+        const resetImportUi = () => {
+            if (fileInput) {
+                fileInput.value = '';
+            }
+            if (tokenInput) {
+                tokenInput.value = '';
+            }
+            if (nameInput) {
+                nameInput.value = '';
+            }
+            if (slugInput) {
+                slugInput.value = '';
+            }
+            if (statusEl) {
+                statusEl.className = 'alert alert-secondary d-none mt-3';
+                statusEl.textContent = '';
+            }
+            if (identityEl) {
+                identityEl.classList.add('d-none');
+            }
+            if (commitBtn) {
+                commitBtn.disabled = true;
+            }
+            if (actionsEl) {
+                actionsEl.classList.add('d-none');
+            }
+            dropzone.classList.remove('is-dragover');
+            needsIdentity = false;
+            processing = false;
+        };
+
+        const showStatus = (message, type) => {
+            if (!statusEl) {
+                return;
+            }
+            statusEl.className = 'alert alert-' + (type === 'danger' ? 'danger' : type === 'success' ? 'success' : 'secondary') + ' mt-3';
+            statusEl.textContent = message;
+            statusEl.classList.remove('d-none');
+        };
+
+        const processFile = async (file) => {
+            if (!file || processing) {
+                return;
+            }
+            processing = true;
+            const fileName = (file.name || '').toLowerCase();
+            if (fileName.endsWith('.kmz')) {
+                processing = false;
+                const kmzMsg = i18n.importNoKmz || 'El KMZ es un ZIP binario. Descomprímelo e importa el archivo KML.';
+                showStatus(kmzMsg, 'danger');
+                toast(kmzMsg, 'error');
+                return;
+            }
+            if (commitBtn) {
+                commitBtn.disabled = true;
+            }
+            if (tokenInput) {
+                tokenInput.value = '';
+            }
+            if (identityEl) {
+                identityEl.classList.add('d-none');
+            }
+            if (actionsEl) {
+                actionsEl.classList.add('d-none');
+            }
+
+            showStatus('…', 'secondary');
+            const body = new FormData();
+            body.append('import_file', file);
+
+            const result = await ajax('parse_import', body);
+            if (!result.ok) {
+                processing = false;
+                showStatus(result.message || (i18n.errorGeneric || 'Error'), 'danger');
+                toast(result.message, 'error');
+                return;
+            }
+
+            const data = result.data || {};
+            if (tokenInput) {
+                tokenInput.value = data.token || '';
+            }
+            needsIdentity = !!data.needs_identity;
+
+            const fmt = data.detected || '?';
+            const count = data.markers_count != null ? data.markers_count : 0;
+            showStatus(
+                (i18n.importValidated || 'Archivo válido')
+                    + ': ' + String(fmt).toUpperCase()
+                    + ' · ' + count + ' marcadores'
+                    + (data.is_native ? ' · JSON propio' : ''),
+                'success'
+            );
+
+            if (identityEl && nameInput && slugInput) {
+                if (needsIdentity) {
+                    identityEl.classList.remove('d-none');
+                    nameInput.value = data.suggested_name || '';
+                    slugInput.value = data.suggested_slug || '';
+                    nameInput.required = true;
+                } else {
+                    identityEl.classList.add('d-none');
+                    nameInput.required = false;
+                }
+            }
+
+            if (actionsEl) {
+                actionsEl.classList.remove('d-none');
+            }
+            if (commitBtn) {
+                commitBtn.disabled = !data.token;
+            }
+            processing = false;
+        };
+
+        toggle.addEventListener('click', () => {
+            setPanelOpen(panel.classList.contains('d-none'));
+        });
+
+        ['dragenter', 'dragover'].forEach((eventName) => {
+            dropzone.addEventListener(eventName, (event) => {
+                event.preventDefault();
+                event.stopPropagation();
+                dropzone.classList.add('is-dragover');
+            });
+        });
+
+        dropzone.addEventListener('dragleave', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            if (!dropzone.contains(event.relatedTarget)) {
+                dropzone.classList.remove('is-dragover');
+            }
+        });
+
+        dropzone.addEventListener('drop', (event) => {
+            event.preventDefault();
+            event.stopPropagation();
+            dropzone.classList.remove('is-dragover');
+            const file = event.dataTransfer && event.dataTransfer.files && event.dataTransfer.files[0];
+            processFile(file);
+        });
+
+        if (fileInput) {
+            fileInput.addEventListener('change', () => {
+                const file = fileInput.files && fileInput.files[0];
+                processFile(file);
+            });
+        }
+
+        if (commitBtn) {
+            commitBtn.addEventListener('click', async () => {
+                const token = tokenInput ? tokenInput.value : '';
+                if (!token) {
+                    toast(i18n.importNeedFile || 'Selecciona un archivo primero.', 'error');
+                    return;
+                }
+
+                const payload = {
+                    token: token,
+                };
+
+                if (needsIdentity) {
+                    const name = nameInput ? String(nameInput.value).trim() : '';
+                    if (!name) {
+                        toast(i18n.importNeedName || 'Indica un nombre para la colección.', 'error');
+                        return;
+                    }
+                    payload.collection_name = name;
+                    payload.collection_slug = slugInput ? String(slugInput.value).trim() : '';
+                }
+
+                commitBtn.disabled = true;
+                const result = await ajax('commit_import', payload);
+                if (!result.ok) {
+                    commitBtn.disabled = false;
+                    toast(result.message, 'error');
+                    showStatus(result.message, 'danger');
+                    return;
+                }
+
+                handleResult(result);
+            });
+        }
+    }
 
     /**
      * Tabla editable de marcadores (validación + AJAX).

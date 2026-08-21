@@ -365,13 +365,13 @@ class SJB_WP_LEAFLET_MAP_Collections {
         if ( 'media' === $marker_source ) {
             $marker_att = isset( $marker->icon_attachment_id ) ? absint( $marker->icon_attachment_id ) : 0;
             if ( $marker_att > 0 ) {
-                $img = wp_get_attachment_image_src( $marker_att, 'full' );
-                if ( is_array( $img ) && ! empty( $img[0] ) ) {
+                $img = SJB_WP_LEAFLET_MAP::get_marker_icon_src( $marker_att );
+                if ( $img ) {
                     return array(
                         'source' => 'media',
-                        'url'    => (string) $img[0],
-                        'width'  => isset( $img[1] ) ? (int) $img[1] : 0,
-                        'height' => isset( $img[2] ) ? (int) $img[2] : 0,
+                        'url'    => $img['url'],
+                        'width'  => $img['width'],
+                        'height' => $img['height'],
                     );
                 }
             }
@@ -399,13 +399,13 @@ class SJB_WP_LEAFLET_MAP_Collections {
         }
 
         if ( 'media' === $source && $att_id > 0 ) {
-            $img = wp_get_attachment_image_src( $att_id, 'full' );
-            if ( is_array( $img ) && ! empty( $img[0] ) ) {
+            $img = SJB_WP_LEAFLET_MAP::get_marker_icon_src( $att_id );
+            if ( $img ) {
                 return array(
                     'source' => 'media',
-                    'url'    => (string) $img[0],
-                    'width'  => isset( $img[1] ) ? (int) $img[1] : 0,
-                    'height' => isset( $img[2] ) ? (int) $img[2] : 0,
+                    'url'    => $img['url'],
+                    'width'  => $img['width'],
+                    'height' => $img['height'],
                 );
             }
         }
@@ -598,13 +598,53 @@ class SJB_WP_LEAFLET_MAP_Collections {
 
     /**
      * Genera un slug único para colección.
+     * Si choca: base-1, base-2, …
+     */
+    public static function make_unique_slug( string $slug, int $exclude_id = 0 ): string {
+        return self::unique_collection_slug( $slug, $exclude_id );
+    }
+
+    /**
+     * Genera un nombre único para colección (misma lógica -1, -2…).
+     */
+    public static function make_unique_name( string $name, int $exclude_id = 0 ): string {
+        global $wpdb;
+
+        $name = trim( $name );
+        if ( '' === $name ) {
+            $name = 'Colección';
+        }
+
+        $base  = $name;
+        $table = self::table_collections();
+        $n     = 1;
+
+        while ( true ) {
+            $existing_id = (int) $wpdb->get_var(
+                $wpdb->prepare(
+                    "SELECT id FROM {$table} WHERE name = %s LIMIT 1", // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+                    $name
+                )
+            );
+
+            if ( 0 === $existing_id || $existing_id === $exclude_id ) {
+                return $name;
+            }
+
+            $name = $base . '-' . $n;
+            ++$n;
+        }
+    }
+
+    /**
+     * Genera un slug único para colección.
      */
     private static function unique_collection_slug( string $slug, int $exclude_id = 0 ): string {
         global $wpdb;
 
         $base  = $slug;
         $table = self::table_collections();
-        $n     = 2;
+        $n     = 1;
 
         while ( true ) {
             $existing_id = (int) $wpdb->get_var(

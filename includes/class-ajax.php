@@ -31,6 +31,9 @@ class SJB_WP_LEAFLET_MAP_Ajax {
             'save_marker',
             'delete_marker',
             'toggle_marker_active',
+            'export_collection',
+            'parse_import',
+            'commit_import',
         );
 
         foreach ( $actions as $action ) {
@@ -96,6 +99,15 @@ class SJB_WP_LEAFLET_MAP_Ajax {
 
         $options['marker_icon_source']     = $icon_source;
         $options['marker_icon_attachment'] = $icon_attachment;
+
+        $icon_size = absint( $_POST['marker_icon_size'] ?? 48 );
+        if ( $icon_size < 16 ) {
+            $icon_size = 16;
+        }
+        if ( $icon_size > 128 ) {
+            $icon_size = 128;
+        }
+        $options['marker_icon_size'] = $icon_size;
         update_option( SJB_WP_LEAFLET_MAP::$noslug . '_options', $options );
 
         wp_send_json_success(
@@ -170,6 +182,143 @@ class SJB_WP_LEAFLET_MAP_Ajax {
             array(
                 'message'  => __( 'Colección eliminada.', 'sjb-wp-leaflet-map' ),
                 'redirect' => self::admin_url( array( 'tab' => 'marcadores' ) ),
+            )
+        );
+    }
+
+    /**
+     * Descarga una colección en JSON, GeoJSON, KML o KMZ.
+     */
+    public static function handle_export_collection(): void {
+        self::guard();
+
+        $id     = absint( $_REQUEST['collection_id'] ?? 0 );
+        $format = sanitize_key( (string) ( $_REQUEST['format'] ?? 'json' ) );
+
+        if ( 'kmz' === $format && ! class_exists( 'ZipArchive' ) ) {
+            wp_die(
+                esc_html__( 'KMZ requiere la extensión ZIP de PHP.', 'sjb-wp-leaflet-map' ),
+                esc_html__( 'Error de exportación', 'sjb-wp-leaflet-map' ),
+                array( 'response' => 500 )
+            );
+        }
+
+        $file = SJB_WP_LEAFLET_MAP_Exchange::export_file( $id, $format );
+        if ( ! $file ) {
+            wp_die(
+                esc_html__( 'No se pudo exportar la colección.', 'sjb-wp-leaflet-map' ),
+                esc_html__( 'Error de exportación', 'sjb-wp-leaflet-map' ),
+                array( 'response' => 404 )
+            );
+        }
+
+        nocache_headers();
+        header( 'Content-Type: ' . $file['mime'] );
+        header( 'Content-Disposition: attachment; filename="' . $file['filename'] . '"' );
+        header( 'Content-Length: ' . (string) strlen( $file['body'] ) );
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- binario / XML / JSON de descarga.
+        echo $file['body'];
+        exit;
+    }
+
+    /**
+     * Sube y valida un archivo de importación; guarda payload en transient.
+     */
+    public static function handle_parse_import(): void {
+        self::guard();
+
+        if ( empty( $_FILES['import_file'] ) || ! is_array( $_FILES['import_file'] ) ) {
+            wp_send_json_error(
+                array( 'message' => __( 'No se recibió ningún archivo.', 'sjb-wp-leaflet-map' ) )
+            );
+        }
+
+        $file = $_FILES['import_file'];
+        if ( ! empty( $file['error'] ) ) {
+            wp_send_json_error(
+                array( 'message' => __( 'Error al subir el archivo.', 'sjb-wp-leaflet-map' ) )
+            );
+        }
+
+        $tmp  = isset( $file['tmp_name'] ) ? (string) $file['tmp_name'] : '';
+        $name = isset( $file['name'] ) ? sanitize_file_name( (string) $file['name'] ) : 'import';
+
+        $parsed = SJB_WP_LEAFLET_MAP_Exchange::parse_import_file( $tmp, $name );
+        if ( is_wp_error( $parsed ) ) {
+            wp_send_json_error(
+                array( 'message' => $parsed->get_error_message() )
+            );
+        }
+
+        $token = wp_generate_password( 20, false, false );
+        set_transient(
+            'sjb_leaflet_import_' . $token,
+            $parsed['payload'],
+            15 * MINUTE_IN_SECONDS
+        );
+
+        wp_send_json_success(
+            array(
+                'message'         => __( 'Archivo validado. Confirma la importación.', 'sjb-wp-leaflet-map' ),
+                'token'           => $token,
+                'detected'        => $parsed['detected'],
+                'is_native'       => $parsed['is_native'],
+                'needs_identity'  => $parsed['needs_identity'],
+                'suggested_name'  => $parsed['suggested_name'],
+                'suggested_slug'  => $parsed['suggested_slug'],
+                'markers_count'   => $parsed['markers_count'],
+            )
+        );
+    }
+
+    /**
+     * Confirma la importación desde el transient.
+     */
+    public static function handle_commit_import(): void {
+        self::guard();
+
+        $token = isset( $_POST['token'] ) ? sanitize_text_field( wp_unslash( (string) $_POST['token'] ) ) : '';
+        if ( '' === $token ) {
+            wp_send_json_error(
+                array( 'message' => __( 'Sesión de importación no válida. Vuelve a subir el archivo.', 'sjb-wp-leaflet-map' ) )
+            );
+        }
+
+        $key     = 'sjb_leaflet_import_' . $token;
+        $payload = get_transient( $key );
+        if ( ! is_array( $payload ) ) {
+            wp_send_json_error(
+                array( 'message' => __( 'La importación ha caducado. Vuelve a subir el archivo.', 'sjb-wp-leaflet-map' ) )
+            );
+        }
+
+        $name = isset( $_POST['collection_name'] ) ? wp_unslash( (string) $_POST['collection_name'] ) : null;
+        $slug = isset( $_POST['collection_slug'] ) ? wp_unslash( (string) $_POST['collection_slug'] ) : null;
+
+        $result = SJB_WP_LEAFLET_MAP_Exchange::import_payload( $payload, $name, $slug );
+        delete_transient( $key );
+
+        if ( is_wp_error( $result ) ) {
+            wp_send_json_error(
+                array( 'message' => $result->get_error_message() )
+            );
+        }
+
+        wp_send_json_success(
+            array(
+                'message'  => sprintf(
+                    /* translators: 1: nombre colección, 2: número de marcadores */
+                    __( 'Colección «%1$s» importada (%2$d marcadores).', 'sjb-wp-leaflet-map' ),
+                    $result['name'],
+                    (int) $result['markers']
+                ),
+                'id'       => (int) $result['collection_id'],
+                'redirect' => self::admin_url(
+                    array(
+                        'tab'           => 'marcadores',
+                        'collection_id' => (int) $result['collection_id'],
+                    )
+                ),
             )
         );
     }

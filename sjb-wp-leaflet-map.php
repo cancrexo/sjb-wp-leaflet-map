@@ -20,6 +20,7 @@ defined( 'ABSPATH' ) || exit;
 
 require_once __DIR__ . '/includes/class-shortcodes.php';
 require_once __DIR__ . '/includes/class-collections.php';
+require_once __DIR__ . '/includes/class-exchange.php';
 require_once __DIR__ . '/includes/class-ajax.php';
 
 register_activation_hook( __FILE__, array( 'SJB_WP_LEAFLET_MAP', 'on_activation' ) );
@@ -39,6 +40,8 @@ class SJB_WP_LEAFLET_MAP {
     public static string $version         = '0.1.0';
     public static string $leaflet_version = '1.9.4';
     public static string $title           = 'SJB WP Leaflet Map';
+    /** Nombre del tamaño de imagen WP para el pin. */
+    public const MARKER_ICON_IMAGE_SIZE = 'sjb-leaflet-marker';
     /** @var string */
     public static $plugindir;
     /** @var string */
@@ -94,6 +97,20 @@ class SJB_WP_LEAFLET_MAP {
         SJB_WP_LEAFLET_MAP_Ajax::register();
         SJB_WP_LEAFLET_MAP_Shortcodes::register();
 
+        add_action(
+            'init',
+            static function (): void {
+                $size = absint( SJB_WP_LEAFLET_MAP::get_options()['marker_icon_size'] ?? 48 );
+                if ( $size < 16 ) {
+                    $size = 16;
+                }
+                if ( $size > 128 ) {
+                    $size = 128;
+                }
+                add_image_size( SJB_WP_LEAFLET_MAP::MARKER_ICON_IMAGE_SIZE, $size, $size, false );
+            }
+        );
+
         // dbDelta en admin: añade columnas nuevas (p. ej. show_always).
         add_action( 'admin_init', array( 'SJB_WP_LEAFLET_MAP_Collections', 'create_tables' ) );
     }
@@ -129,13 +146,14 @@ class SJB_WP_LEAFLET_MAP {
             'version'                => self::$version,
             'marker_icon_source'     => 'leaflet',
             'marker_icon_attachment' => 0,
+            'marker_icon_size'       => 48,
         );
     }
 
     /**
      * Datos de entorno para la pestaña Info (servidor, PHP, BD, versiones).
      *
-     * @return array<int, array{title: string, rows: array<int, array{label: string, value: string}>}>
+     * @return array<int, array{title: string, rows: array<int, array{label: string, value: string, url?: string}>}>
      */
     public static function get_system_info(): array {
         global $wpdb;
@@ -248,6 +266,7 @@ class SJB_WP_LEAFLET_MAP {
                     ),
                 ),
             ),
+          
             array(
                 'title' => __( 'WordPress y comercio', 'sjb-wp-leaflet-map' ),
                 'rows'  => array(
@@ -380,6 +399,29 @@ class SJB_WP_LEAFLET_MAP {
                     ),
                 ),
             ),
+            array(
+                'title' => __( 'Autor', 'sjb-wp-leaflet-map' ),
+                'rows'  => array(
+                    array(
+                        'label' => __( 'Nombre', 'sjb-wp-leaflet-map' ),
+                        'value' => 'Daniel "Cancrexo" Prol',
+                    ),
+                    array(
+                        'label' => __( 'Email', 'sjb-wp-leaflet-map' ),
+                        'value' => 'cancrexo@gmail.com',
+                        'url'   => 'mailto:cancrexo@gmail.com',
+                    ),
+                    array(
+                        'label' => __( 'Empresa', 'sjb-wp-leaflet-map' ),
+                        'value' => 'SJB Dixital',
+                    ),
+                    array(
+                        'label' => __( 'Web', 'sjb-wp-leaflet-map' ),
+                        'value' => 'https://www.sjbdixital.es',
+                        'url'   => 'https://www.sjbdixital.es',
+                    ),
+                ),
+            )
         );
     }
 
@@ -396,6 +438,99 @@ class SJB_WP_LEAFLET_MAP {
         }
 
         return array_merge( self::default_options(), $saved );
+    }
+
+    /**
+     * Miniatura del pin: encaja en marker_icon_size sin recortar. La genera si falta.
+     *
+     * @return array{url: string, width: int, height: int}|null
+     */
+    public static function get_marker_icon_src( int $attachment_id ): ?array {
+        if ( $attachment_id < 1 || ! wp_attachment_is_image( $attachment_id ) ) {
+            return null;
+        }
+
+        $wanted = absint( self::get_options()['marker_icon_size'] ?? 48 );
+        if ( $wanted < 16 ) {
+            $wanted = 16;
+        }
+        if ( $wanted > 128 ) {
+            $wanted = 128;
+        }
+
+        $file = get_attached_file( $attachment_id );
+        if ( ! $file || ! is_readable( $file ) ) {
+            return null;
+        }
+
+        $meta   = wp_get_attachment_metadata( $attachment_id );
+        $orig_w = ( is_array( $meta ) && isset( $meta['width'] ) ) ? (int) $meta['width'] : 0;
+        $orig_h = ( is_array( $meta ) && isset( $meta['height'] ) ) ? (int) $meta['height'] : 0;
+
+        if ( $orig_w > 0 && $orig_h > 0 && $orig_w <= $wanted && $orig_h <= $wanted ) {
+            $url = wp_get_attachment_url( $attachment_id );
+            if ( ! $url ) {
+                return null;
+            }
+
+            return array(
+                'url'    => $url,
+                'width'  => $orig_w,
+                'height' => $orig_h,
+            );
+        }
+
+        $size_name    = self::MARKER_ICON_IMAGE_SIZE;
+        $needs_resize = true;
+        $max_orig     = max( $orig_w, $orig_h );
+        $expected_max = ( $max_orig > 0 ) ? min( $wanted, $max_orig ) : $wanted;
+
+        if ( is_array( $meta ) && isset( $meta['sizes'][ $size_name ] ) && is_array( $meta['sizes'][ $size_name ] ) ) {
+            $stored = $meta['sizes'][ $size_name ];
+            $sw     = (int) ( $stored['width'] ?? 0 );
+            $sh     = (int) ( $stored['height'] ?? 0 );
+            $disk   = dirname( $file ) . '/' . ltrim( (string) ( $stored['file'] ?? '' ), '/' );
+            if ( $sw > 0 && $sh > 0 && max( $sw, $sh ) === $expected_max && is_readable( $disk ) ) {
+                $needs_resize = false;
+            }
+        }
+
+        if ( $needs_resize ) {
+            if ( ! function_exists( 'image_make_intermediate_size' ) ) {
+                require_once ABSPATH . 'wp-admin/includes/image.php';
+            }
+            $resized = image_make_intermediate_size( $file, $wanted, $wanted, false );
+            if ( is_array( $resized ) && ! empty( $resized['file'] ) ) {
+                if ( ! is_array( $meta ) ) {
+                    $meta = array();
+                }
+                if ( ! isset( $meta['sizes'] ) || ! is_array( $meta['sizes'] ) ) {
+                    $meta['sizes'] = array();
+                }
+                $meta['sizes'][ $size_name ] = $resized;
+                wp_update_attachment_metadata( $attachment_id, $meta );
+            }
+        }
+
+        $src = wp_get_attachment_image_src( $attachment_id, $size_name );
+        if ( is_array( $src ) && ! empty( $src[0] ) ) {
+            return array(
+                'url'    => (string) $src[0],
+                'width'  => isset( $src[1] ) ? (int) $src[1] : $wanted,
+                'height' => isset( $src[2] ) ? (int) $src[2] : $wanted,
+            );
+        }
+
+        $full = wp_get_attachment_image_src( $attachment_id, 'full' );
+        if ( ! is_array( $full ) || empty( $full[0] ) ) {
+            return null;
+        }
+
+        return array(
+            'url'    => (string) $full[0],
+            'width'  => isset( $full[1] ) ? (int) $full[1] : 0,
+            'height' => isset( $full[2] ) ? (int) $full[2] : 0,
+        );
     }
 
     /**
@@ -492,6 +627,13 @@ class SJB_WP_LEAFLET_MAP {
                     'markerInvalid'     => __( 'Latitud y longitud deben ser números válidos.', 'sjb-wp-leaflet-map' ),
                     'markerConfirmDel'  => __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-map' ),
                     'exportTodo'        => __( 'Exportar: pendiente de implementar.', 'sjb-wp-leaflet-map' ),
+                    'exportTitle'       => __( 'Exportar colección', 'sjb-wp-leaflet-map' ),
+                    'exportError'       => __( 'No se pudo exportar la colección.', 'sjb-wp-leaflet-map' ),
+                    'exportKmzMissing'  => __( 'KMZ requiere la extensión ZIP de PHP.', 'sjb-wp-leaflet-map' ),
+                    'importValidated'   => __( 'Archivo válido', 'sjb-wp-leaflet-map' ),
+                    'importNeedFile'    => __( 'Selecciona un archivo primero.', 'sjb-wp-leaflet-map' ),
+                    'importNeedName'    => __( 'Indica un nombre para la colección.', 'sjb-wp-leaflet-map' ),
+                    'importNoKmz'       => __( 'El KMZ es un ZIP binario. Descomprímelo e importa el archivo KML.', 'sjb-wp-leaflet-map' ),
                     'duplicateTodo'     => __( 'Duplicar: pendiente de implementar.', 'sjb-wp-leaflet-map' ),
                     'markerActive'      => __( 'Activo (clic para desactivar)', 'sjb-wp-leaflet-map' ),
                     'markerInactive'    => __( 'Inactivo (clic para activar)', 'sjb-wp-leaflet-map' ),

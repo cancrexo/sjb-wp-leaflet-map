@@ -85,6 +85,33 @@ $leaflet_icon    = SJB_WP_LEAFLET_MAP::$path2assets . 'vendor/leaflet/images/mar
                         <span class="text-muted small ms-2"><?php esc_html_e( 'Vista previa del pin de Leaflet', 'sjb-wp-leaflet-map' ); ?></span>
                     </div>
                 </div>
+
+                <?php
+                $icon_size = isset( $options['marker_icon_size'] ) ? absint( $options['marker_icon_size'] ) : 48;
+                if ( $icon_size < 16 ) {
+                    $icon_size = 16;
+                }
+                if ( $icon_size > 128 ) {
+                    $icon_size = 128;
+                }
+                ?>
+                <div class="mt-3">
+                    <label class="form-label" for="marker_icon_size"><?php esc_html_e( 'Tamaño del icono en el mapa (px)', 'sjb-wp-leaflet-map' ); ?></label>
+                    <input
+                        class="form-control"
+                        type="number"
+                        name="marker_icon_size"
+                        id="marker_icon_size"
+                        min="16"
+                        max="128"
+                        step="1"
+                        value="<?php echo esc_attr( (string) $icon_size ); ?>"
+                        style="max-width: 8rem;"
+                    >
+                    <p class="form-text mb-0">
+                        <?php esc_html_e( 'Lado máximo de la miniatura (16–128). WordPress genera un tamaño propio, sin recortar, y el mapa usa esa imagen en lugar del original. Por defecto 48.', 'sjb-wp-leaflet-map' ); ?>
+                    </p>
+                </div>
             </div>
         </div>
 

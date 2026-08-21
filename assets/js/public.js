@@ -103,7 +103,7 @@
             height = 41;
         }
 
-        const maxSide = 48;
+        const maxSide = 128;
         if (width > maxSide || height > maxSide) {
             const scale = maxSide / Math.max(width, height);
             width = Math.max(1, Math.round(width * scale));

@@ -216,6 +216,19 @@ body.modal-open .modal-backdrop {
 /* Botones de acción solo icono (tablas admin). */
 .sjb-leaflet-admin .sjb-icon-actions {
     white-space: nowrap;
+    overflow: visible;
+}
+
+.sjb-leaflet-admin .sjb-col-actions {
+    overflow: visible;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn.dropdown-toggle::after {
+    display: none;
+}
+
+.sjb-leaflet-admin .sjb-icon-actions .dropdown-menu {
+    z-index: 100060;
 }
 
 .sjb-leaflet-admin .sjb-icon-btn {
@@ -491,5 +504,63 @@ body.modal-open .modal-backdrop {
 
 .sjb-leaflet-admin .sjb-info-table td {
     word-break: break-word;
+}
+
+/* Zona de importación (drag & drop). */
+.sjb-leaflet-admin .sjb-import-dropzone {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 0.35rem;
+    min-height: 7.5rem;
+    padding: 1.25rem 1.5rem;
+    margin: 0;
+    border: 2px dashed #ffc107;
+    border-radius: 0.5rem;
+    background-color: rgba(255, 193, 7, 0.08);
+    color: #664d03;
+    text-align: center;
+    cursor: pointer;
+}
+
+.sjb-leaflet-admin .sjb-import-dropzone input[type="file"] {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.sjb-leaflet-admin .sjb-import-dropzone:hover,
+.sjb-leaflet-admin .sjb-import-dropzone.is-dragover {
+    background-color: rgba(255, 193, 7, 0.18);
+    border-color: #ffca2c;
+}
+
+.sjb-leaflet-admin .sjb-import-dropzone__icon,
+.sjb-leaflet-admin .sjb-import-dropzone__title,
+.sjb-leaflet-admin .sjb-import-dropzone__formats {
+    pointer-events: none;
+}
+
+.sjb-leaflet-admin .sjb-import-dropzone__icon {
+    font-size: 28px;
+    width: 28px;
+    height: 28px;
+    line-height: 1;
+}
+
+.sjb-leaflet-admin .sjb-import-dropzone__title {
+    font-weight: 600;
+}
+
+.sjb-leaflet-admin .sjb-import-dropzone__formats {
+    font-size: 0.875rem;
+    opacity: 0.85;
 }
 

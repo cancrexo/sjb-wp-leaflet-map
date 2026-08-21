@@ -26,7 +26,13 @@ $sections = SJB_WP_LEAFLET_MAP::get_system_info();
                         <?php foreach ( $section['rows'] as $row ) : ?>
                             <tr>
                                 <th scope="row"><?php echo esc_html( $row['label'] ); ?></th>
-                                <td><?php echo esc_html( $row['value'] ); ?></td>
+                                <td>
+                                    <?php if ( ! empty( $row['url'] ) ) : ?>
+                                        <a href="<?php echo esc_url( $row['url'] ); ?>" target="_blank" rel="noopener noreferrer"><?php echo esc_html( $row['value'] ); ?></a>
+                                    <?php else : ?>
+                                        <?php echo esc_html( $row['value'] ); ?>
+                                    <?php endif; ?>
+                                </td>
                             </tr>
                         <?php endforeach; ?>
                     </tbody>
