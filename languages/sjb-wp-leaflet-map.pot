@@ -2,8 +2,8 @@
 # This file is distributed under the GPL v2 or later.
 msgid ""
 msgstr ""
-"Project-Id-Version: SJB WP Leaflet Map 1.0.0\n"
-"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/sjb-wp-leafleet-map\n"
+"Project-Id-Version: SJB WP Leaflet Map 0.1.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/sjb-wp-leaflet-map\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
 "MIME-Version: 1.0\n"
@@ -12,39 +12,39 @@ msgstr ""
 "POT-Creation-Date: 2026-08-20T09:57:48+00:00\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "X-Generator: WP-CLI 2.12.0\n"
-"X-Domain: sjb-wp-leafleet-map\n"
+"X-Domain: sjb-wp-leaflet-map\n"
 
 #. Plugin Name of the plugin
-#: sjb-wp-leafleet-map.php
+#: sjb-wp-leaflet-map.php
 msgid "SJB WP Leaflet Map"
 msgstr ""
 
 #. Plugin URI of the plugin
 #. Author URI of the plugin
-#: sjb-wp-leafleet-map.php
+#: sjb-wp-leaflet-map.php
 msgid "https://www.sjbdixtal.es"
 msgstr ""
 
 #. Description of the plugin
-#: sjb-wp-leafleet-map.php
+#: sjb-wp-leaflet-map.php
 msgid "Mapas interactivos con Leaflet para WordPress."
 msgstr ""
 
 #. Author of the plugin
-#: sjb-wp-leafleet-map.php
+#: sjb-wp-leaflet-map.php
 msgid "SJB Dixital"
 msgstr ""
 
-#: sjb-wp-leafleet-map.php:99
-#: sjb-wp-leafleet-map.php:237
+#: sjb-wp-leaflet-map.php:99
+#: sjb-wp-leaflet-map.php:237
 msgid "SJB WP Leaflet Map requiere PHP 8.3 o superior."
 msgstr ""
 
-#: sjb-wp-leafleet-map.php:148
+#: sjb-wp-leaflet-map.php:148
 msgid "Ajustes"
 msgstr ""
 
-#: sjb-wp-leafleet-map.php:238
+#: sjb-wp-leaflet-map.php:238
 msgid "Error de activación"
 msgstr ""
 

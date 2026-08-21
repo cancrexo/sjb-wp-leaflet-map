@@ -3,36 +3,36 @@
  * Plugin Name: SJB WP Leaflet Map
  * Plugin URI: https://www.sjbdixtal.es
  * Description: Mapas interactivos con Leaflet para WordPress.
- * Version: 1.0.0
+ * Version: 0.1.0
  * Author: SJB Dixital
  * Author URI: https://www.sjbdixtal.es
  * Requires at least: 6.0
  * Requires PHP: 8.3
- * Text Domain: sjb-wp-leafleet-map
+ * Text Domain: sjb-wp-leaflet-map
  * Domain Path: /languages
  * License: GPL v2 or later
  * License URI: https://www.gnu.org/licenses/gpl-2.0.html
  *
- * @package sjb-wp-leafleet-map
+ * @package sjb-wp-leaflet-map
  */
 
 defined( 'ABSPATH' ) || exit;
 
-register_activation_hook( __FILE__, array( 'SJB_WP_LEAFLEET_MAP', 'on_activation' ) );
-register_deactivation_hook( __FILE__, array( 'SJB_WP_LEAFLEET_MAP', 'on_deactivation' ) );
+register_activation_hook( __FILE__, array( 'SJB_WP_LEAFLET_MAP', 'on_activation' ) );
+register_deactivation_hook( __FILE__, array( 'SJB_WP_LEAFLET_MAP', 'on_deactivation' ) );
 
-add_action( 'plugins_loaded', array( 'SJB_WP_LEAFLEET_MAP', 'init' ) );
+add_action( 'plugins_loaded', array( 'SJB_WP_LEAFLET_MAP', 'init' ) );
 
 /**
  * Plugin principal (singleton).
  */
-class SJB_WP_LEAFLEET_MAP {
+class SJB_WP_LEAFLET_MAP {
 
     /** @var string */
     public static $slug;
     /** @var string */
     public static $noslug;
-    public static string $version = '1.0.0';
+    public static string $version = '0.1.0';
     public static string $title   = 'SJB WP Leaflet Map';
     /** @var string */
     public static $plugindir;
@@ -96,7 +96,7 @@ class SJB_WP_LEAFLEET_MAP {
                 'admin_notices',
                 static function (): void {
                     echo '<div class="notice notice-error"><p>';
-                    esc_html_e( 'SJB WP Leaflet Map requiere PHP 8.3 o superior.', 'sjb-wp-leafleet-map' );
+                    esc_html_e( 'SJB WP Leaflet Map requiere PHP 8.3 o superior.', 'sjb-wp-leaflet-map' );
                     echo '</p></div>';
                 }
             );
@@ -145,7 +145,7 @@ class SJB_WP_LEAFLEET_MAP {
 
         array_unshift(
             $links,
-            '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Ajustes', 'sjb-wp-leafleet-map' ) . '</a>'
+            '<a href="' . esc_url( $url ) . '">' . esc_html__( 'Ajustes', 'sjb-wp-leaflet-map' ) . '</a>'
         );
 
         return $links;
@@ -209,8 +209,8 @@ class SJB_WP_LEAFLEET_MAP {
 
         $updated = false;
 
-        if ( isset( $_POST['sjb_wp_leafleet_map_save'] ) ) {
-            check_admin_referer( 'sjb_wp_leafleet_map_save_settings' );
+        if ( isset( $_POST['sjb_wp_leaflet_map_save'] ) ) {
+            check_admin_referer( 'sjb_wp_leaflet_map_save_settings' );
 
             $options                         = self::get_options();
             $options['delete_onuninstall']   = isset( $_POST['delete_onuninstall'] ) ? 1 : 0;
@@ -234,16 +234,27 @@ class SJB_WP_LEAFLEET_MAP {
         if ( version_compare( PHP_VERSION, '8.3', '<' ) ) {
             deactivate_plugins( plugin_basename( __FILE__ ) );
             wp_die(
-                esc_html__( 'SJB WP Leaflet Map requiere PHP 8.3 o superior.', 'sjb-wp-leafleet-map' ),
-                esc_html__( 'Error de activación', 'sjb-wp-leafleet-map' ),
+                esc_html__( 'SJB WP Leaflet Map requiere PHP 8.3 o superior.', 'sjb-wp-leaflet-map' ),
+                esc_html__( 'Error de activación', 'sjb-wp-leaflet-map' ),
                 array( 'back_link' => true )
             );
         }
 
         self::staticValues();
 
-        if ( false === get_option( self::$noslug . '_options' ) ) {
-            add_option( self::$noslug . '_options', self::default_options() );
+        $option_name     = self::$noslug . '_options';
+        $legacy_option   = 'sjb_wp_leafleet_map_options'; // Typo previo (3 e).
+        $existing_option = get_option( $option_name, false );
+
+        // Migrar option del slug mal escrito si aún existe en BD.
+        if ( false === $existing_option ) {
+            $legacy = get_option( $legacy_option, false );
+            if ( false !== $legacy && is_array( $legacy ) ) {
+                add_option( $option_name, $legacy );
+                delete_option( $legacy_option );
+            } else {
+                add_option( $option_name, self::default_options() );
+            }
         }
     }
 

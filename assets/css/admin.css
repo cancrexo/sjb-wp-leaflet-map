@@ -1,31 +1,83 @@
 /* Ajustes menores para Bootstrap 5.3 dentro de wp-admin. */
-.sjb-leafleet-admin {
+.sjb-leaflet-admin {
     max-width: 960px;
 }
 
-.sjb-leafleet-admin .nav-tabs {
+.sjb-leaflet-admin .nav-tabs {
     margin-top: 1rem;
     margin-bottom: 0;
 }
 
-.sjb-leafleet-tab-content {
+.sjb-leaflet-tab-content {
     background: #fff;
     border: 1px solid #dee2e6;
     border-top: 0;
     padding: 1.25rem 1.5rem;
 }
 
-.sjb-leafleet-admin .form-check-input:checked {
+/*
+ * Conflicto WP: forms.css fuerza tamaño/appearance/::before en checkbox.
+ * Reaplicar form-switch de Bootstrap con más especificidad.
+ * @see https://getbootstrap.com/docs/5.3/forms/checks-radios/#switches
+ */
+.sjb-leaflet-admin .form-switch .form-check-input {
+    --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='rgba%280, 0, 0, 0.25%29'/%3e%3c/svg%3e");
+    float: none !important;
+    width: 2.5em !important;
+    height: 1.25em !important;
+    min-width: 2.5em !important;
+    margin-left: -2.5em !important;
+    margin-top: 0 !important;
+    padding: 0 !important;
+    border: 1px solid rgba(0, 0, 0, 0.25) !important;
+    border-radius: 2em !important;
+    background-color: #fff !important;
+    background-image: var(--bs-form-switch-bg) !important;
+    background-position: left center !important;
+    background-repeat: no-repeat !important;
+    background-size: contain !important;
+    box-shadow: none !important;
+    -webkit-appearance: none !important;
+    appearance: none !important;
+    cursor: pointer;
+}
+
+.sjb-leaflet-admin .form-switch .form-check-input::before {
+    content: none !important;
+    display: none !important;
+}
+
+.sjb-leaflet-admin .form-switch .form-check-input:focus {
+    --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%2386b7fe'/%3e%3c/svg%3e");
+    border-color: #86b7fe !important;
+    outline: 0 !important;
+    box-shadow: 0 0 0 0.25rem rgba(34, 113, 177, 0.25) !important;
+    background-image: var(--bs-form-switch-bg) !important;
+}
+
+.sjb-leaflet-admin .form-switch .form-check-input:checked {
+    background-color: #2271b1 !important;
+    border-color: #2271b1 !important;
+    --bs-form-switch-bg: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='-4 -4 8 8'%3e%3ccircle r='3' fill='%23fff'/%3e%3c/svg%3e");
+    background-position: right center !important;
+    background-image: var(--bs-form-switch-bg) !important;
+}
+
+.sjb-leaflet-admin .form-switch .form-check-input:checked::before {
+    content: none !important;
+    display: none !important;
+}
+
+.sjb-leaflet-admin .form-switch .form-check-label {
+    margin-left: 0.5rem;
+}
+
+.sjb-leaflet-admin .btn-primary {
     background-color: #2271b1;
     border-color: #2271b1;
 }
 
-.sjb-leafleet-admin .btn-primary {
-    background-color: #2271b1;
-    border-color: #2271b1;
-}
-
-.sjb-leafleet-admin .btn-primary:hover {
+.sjb-leaflet-admin .btn-primary:hover {
     background-color: #135e96;
     border-color: #135e96;
 }
