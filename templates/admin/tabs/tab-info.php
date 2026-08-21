@@ -16,13 +16,7 @@ $sections = SJB_WP_LEAFLET_MAP::get_system_info();
 
 <div class="sjb-config-cards sjb-info-cards">
     <?php foreach ( $sections as $section ) : ?>
-        <?php
-        $card_class = 'card';
-        if ( ! empty( $section['wide'] ) ) {
-            $card_class .= ' sjb-info-card-wide';
-        }
-        ?>
-        <div class="<?php echo esc_attr( $card_class ); ?>">
+        <div class="card">
             <div class="card-header">
                 <?php echo esc_html( $section['title'] ); ?>
             </div>

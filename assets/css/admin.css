@@ -16,6 +16,23 @@
     padding: 1.25rem 1.5rem;
 }
 
+.sjb-leaflet-admin .sjb-leaflet-author-footnote {
+    margin: 1.5rem 0 0;
+    padding-top: 0.75rem;
+    border-top: 1px solid #dee2e6;
+    text-align: right;
+    font-size: 0.8125rem;
+    color: #6c757d;
+}
+
+.sjb-leaflet-admin .sjb-leaflet-author-footnote a {
+    color: inherit;
+}
+
+.sjb-leaflet-admin .sjb-leaflet-author-footnote a:hover {
+    color: #2271b1;
+}
+
 /*
  * Conflicto WP: forms.css fuerza tamaño/appearance/::before en checkbox.
  * Reaplicar form-switch de Bootstrap con más especificidad.
@@ -493,11 +510,6 @@ body.modal-open .modal-backdrop {
 /* Tablas de la pestaña Info. */
 .sjb-leaflet-admin .sjb-info-cards > .card {
     flex: 1 1 360px;
-}
-
-.sjb-leaflet-admin .sjb-info-cards > .card.sjb-info-card-wide {
-    flex: 1 1 100%;
-    width: 100%;
 }
 
 .sjb-leaflet-admin .sjb-info-table th {

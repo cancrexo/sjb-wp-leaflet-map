@@ -49,5 +49,12 @@ $is_info       = ( 'info' === $active_tab );
                 <?php require SJB_WP_LEAFLET_MAP::$plugindir . 'templates/admin/tabs/tab-info.php'; ?>
             </div>
         <?php endif; ?>
+
+        <p class="sjb-leaflet-author-footnote">
+            Daniel &quot;Cancrexo&quot; Prol · SJB Dixital ·
+            <a href="mailto:cancrexo@gmail.com">cancrexo@gmail.com</a>
+            ·
+            <a href="https://www.sjbdixital.es" target="_blank" rel="noopener noreferrer">sjbdixital.es</a>
+        </p>
     </div>
 </div>

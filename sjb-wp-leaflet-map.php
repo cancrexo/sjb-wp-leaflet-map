@@ -265,30 +265,6 @@ class SJB_WP_LEAFLET_MAP {
 
         return array(
             array(
-                'title' => __( 'Autor', 'sjb-wp-leaflet-map' ),
-                'wide'  => true,
-                'rows'  => array(
-                    array(
-                        'label' => __( 'Nombre', 'sjb-wp-leaflet-map' ),
-                        'value' => 'Daniel "Cancrexo" Prol',
-                    ),
-                    array(
-                        'label' => __( 'Email', 'sjb-wp-leaflet-map' ),
-                        'value' => 'cancrexo@gmail.com',
-                        'url'   => 'mailto:cancrexo@gmail.com',
-                    ),
-                    array(
-                        'label' => __( 'Empresa', 'sjb-wp-leaflet-map' ),
-                        'value' => 'SJB Dixital',
-                    ),
-                    array(
-                        'label' => __( 'Web', 'sjb-wp-leaflet-map' ),
-                        'value' => 'https://www.sjbdixital.es',
-                        'url'   => 'https://www.sjbdixital.es',
-                    ),
-                ),
-            ),
-            array(
                 'title' => __( 'Plugin', 'sjb-wp-leaflet-map' ),
                 'rows'  => array(
                     array(
