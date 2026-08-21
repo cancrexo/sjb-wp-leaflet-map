@@ -32,15 +32,53 @@ class SJB_WP_LEAFLET_MAP_Collections {
         return $wpdb->prefix . 'sjb_wp_leaflet_map_markers';
     }
 
+    /** Transient con el último error de esquema (activación / admin). */
+    public const SCHEMA_ERROR_TRANSIENT = 'sjb_wp_leaflet_map_schema_error';
+
     /**
-     * Crea las tablas de colecciones y marcadores (activación).
+     * Charset/collate para CREATE TABLE.
+     * Por defecto: utf8mb4 / utf8mb4_unicode_ci.
+     * Corrige DB_COLLATE mal puesto (p. ej. "utf8mb4" sin sufijo).
      */
-    public static function create_tables(): void {
+    private static function charset_collate(): string {
+        global $wpdb;
+
+        $charset = is_string( $wpdb->charset ) && '' !== $wpdb->charset
+            ? $wpdb->charset
+            : 'utf8mb4';
+        $collate = is_string( $wpdb->collate ) ? $wpdb->collate : '';
+
+        // Collation real lleva guion bajo. Si falta o es inválida → unicode_ci.
+        if ( '' === $collate || $collate === $charset || ! str_contains( $collate, '_' ) ) {
+            $collate = ( 'utf8mb4' === $charset ) ? 'utf8mb4_unicode_ci' : 'utf8_unicode_ci';
+        }
+
+        // Servidor sin utf8mb4: degradar a utf8 + utf8_unicode_ci.
+        if ( 'utf8mb4' === $charset ) {
+            // phpcs:ignore WordPress.DB.PreparedSQL.NotPrepared -- consulta fija de capacidad.
+            $supports = $wpdb->get_var( "SHOW CHARACTER SET LIKE 'utf8mb4'" );
+            if ( empty( $supports ) ) {
+                $charset = 'utf8';
+                $collate = str_starts_with( $collate, 'utf8mb4_' )
+                    ? str_replace( 'utf8mb4_', 'utf8_', $collate )
+                    : 'utf8_unicode_ci';
+            }
+        }
+
+        return "DEFAULT CHARACTER SET {$charset} COLLATE {$collate}";
+    }
+
+    /**
+     * Crea las tablas de colecciones y marcadores (activación / admin_init).
+     *
+     * @return bool true si ambas tablas existen tras dbDelta.
+     */
+    public static function create_tables(): bool {
         global $wpdb;
 
         require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 
-        $charset   = $wpdb->get_charset_collate();
+        $charset   = self::charset_collate();
         $t_coll    = self::table_collections();
         $t_markers = self::table_markers();
 
@@ -51,8 +89,8 @@ class SJB_WP_LEAFLET_MAP_Collections {
             description text NULL,
             icon_source varchar(20) NOT NULL DEFAULT 'inherit',
             icon_attachment_id bigint(20) unsigned NOT NULL DEFAULT 0,
-            created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-            updated_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+            created_at datetime NOT NULL,
+            updated_at datetime NOT NULL,
             PRIMARY KEY  (id),
             UNIQUE KEY slug (slug)
         ) {$charset};";
@@ -70,14 +108,69 @@ class SJB_WP_LEAFLET_MAP_Collections {
             sort_order int(11) NOT NULL DEFAULT 0,
             icon_source varchar(20) NOT NULL DEFAULT 'inherit',
             icon_attachment_id bigint(20) unsigned NOT NULL DEFAULT 0,
-            created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
-            updated_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
+            created_at datetime NOT NULL,
+            updated_at datetime NOT NULL,
             PRIMARY KEY  (id),
             KEY collection_id (collection_id)
         ) {$charset};";
 
+        $wpdb->last_error = '';
         dbDelta( $sql_collections );
+        $err_coll = (string) $wpdb->last_error;
+
+        $wpdb->last_error = '';
         dbDelta( $sql_markers );
+        $err_markers = (string) $wpdb->last_error;
+
+        $has_coll    = self::table_exists( $t_coll );
+        $has_markers = self::table_exists( $t_markers );
+
+        if ( $has_coll && $has_markers ) {
+            delete_transient( self::SCHEMA_ERROR_TRANSIENT );
+
+            return true;
+        }
+
+        $parts = array();
+        if ( ! $has_coll ) {
+            $parts[] = sprintf(
+                /* translators: %s: nombre de tabla */
+                __( 'No existe la tabla %s.', 'sjb-wp-leaflet-map' ),
+                $t_coll
+            );
+        }
+        if ( ! $has_markers ) {
+            $parts[] = sprintf(
+                /* translators: %s: nombre de tabla */
+                __( 'No existe la tabla %s.', 'sjb-wp-leaflet-map' ),
+                $t_markers
+            );
+        }
+        if ( '' !== $err_coll ) {
+            $parts[] = 'dbDelta collections: ' . $err_coll;
+        }
+        if ( '' !== $err_markers ) {
+            $parts[] = 'dbDelta markers: ' . $err_markers;
+        }
+        if ( empty( $parts ) ) {
+            $parts[] = __( 'dbDelta no reportó error, pero las tablas no están en la base de datos.', 'sjb-wp-leaflet-map' );
+        }
+
+        set_transient( self::SCHEMA_ERROR_TRANSIENT, implode( ' ', $parts ), DAY_IN_SECONDS );
+
+        return false;
+    }
+
+    /**
+     * Comprueba si una tabla existe en la BD actual.
+     */
+    private static function table_exists( string $table ): bool {
+        global $wpdb;
+
+        // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared -- nombre escapado con esc_like.
+        $found = $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $wpdb->esc_like( $table ) ) );
+
+        return ( is_string( $found ) && $found === $table );
     }
 
     /**

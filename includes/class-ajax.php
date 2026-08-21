@@ -135,9 +135,21 @@ class SJB_WP_LEAFLET_MAP_Ajax {
         );
 
         if ( $id < 1 ) {
+            $name = sanitize_text_field( wp_unslash( (string) ( $_POST['collection_name'] ?? '' ) ) );
+            if ( '' === $name ) {
+                wp_send_json_error(
+                    array( 'message' => __( 'El nombre de la colección es obligatorio.', 'sjb-wp-leaflet-map' ) )
+                );
+            }
+
+            global $wpdb;
+            $db_err = ( is_string( $wpdb->last_error ) && '' !== $wpdb->last_error )
+                ? ' ' . $wpdb->last_error
+                : '';
+
             wp_send_json_error(
                 array(
-                    'message' => __( 'No se pudo guardar la colección. El nombre es obligatorio.', 'sjb-wp-leaflet-map' ),
+                    'message' => __( 'No se pudo guardar la colección.', 'sjb-wp-leaflet-map' ) . $db_err,
                 )
             );
         }

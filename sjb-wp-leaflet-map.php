@@ -111,8 +111,31 @@ class SJB_WP_LEAFLET_MAP {
             }
         );
 
-        // dbDelta en admin: añade columnas nuevas (p. ej. show_always).
+        // dbDelta en admin: crea/actualiza esquema; aviso si queda error en transient.
         add_action( 'admin_init', array( 'SJB_WP_LEAFLET_MAP_Collections', 'create_tables' ) );
+        add_action( 'admin_notices', array( $this, 'schema_admin_notice' ) );
+    }
+
+    /**
+     * Aviso en admin si el esquema no se pudo crear.
+     */
+    public function schema_admin_notice(): void {
+        $error = get_transient( SJB_WP_LEAFLET_MAP_Collections::SCHEMA_ERROR_TRANSIENT );
+        if ( ! is_string( $error ) || '' === $error ) {
+            return;
+        }
+
+        if ( ! current_user_can( 'manage_options' ) ) {
+            return;
+        }
+
+        echo '<div class="notice notice-error"><p><strong>';
+        echo esc_html( self::$title );
+        echo ':</strong> ';
+        echo esc_html__( 'No se pudieron crear las tablas de colecciones/marcadores.', 'sjb-wp-leaflet-map' );
+        echo ' ';
+        echo esc_html( $error );
+        echo '</p></div>';
     }
 
     /**
@@ -670,10 +693,6 @@ class SJB_WP_LEAFLET_MAP {
      * Activación: opciones por defecto y tablas de colecciones/marcadores.
      */
     public static function on_activation(): void {
-        if ( ! current_user_can( 'activate_plugins' ) ) {
-            return;
-        }
-
         if ( version_compare( PHP_VERSION, '8.3', '<' ) ) {
             deactivate_plugins( plugin_basename( __FILE__ ) );
             wp_die(
@@ -684,6 +703,25 @@ class SJB_WP_LEAFLET_MAP {
         }
 
         self::staticValues();
+
+        // Tablas primero: si fallan, no dejamos el plugin “activo a medias”.
+        if ( ! SJB_WP_LEAFLET_MAP_Collections::create_tables() ) {
+            $detail = get_transient( SJB_WP_LEAFLET_MAP_Collections::SCHEMA_ERROR_TRANSIENT );
+            $detail = is_string( $detail ) ? $detail : '';
+
+            deactivate_plugins( plugin_basename( __FILE__ ) );
+
+            $message = esc_html__( 'SJB WP Leaflet Map no pudo crear las tablas en la base de datos.', 'sjb-wp-leaflet-map' );
+            if ( '' !== $detail ) {
+                $message .= ' ' . esc_html( $detail );
+            }
+
+            wp_die(
+                $message,
+                esc_html__( 'Error de activación', 'sjb-wp-leaflet-map' ),
+                array( 'back_link' => true )
+            );
+        }
 
         $option_name     = self::$noslug . '_options';
         $legacy_option   = 'sjb_wp_leafleet_map_options'; // Typo previo (3 e).
@@ -699,16 +737,11 @@ class SJB_WP_LEAFLET_MAP {
                 add_option( $option_name, self::default_options() );
             }
         }
-
-        SJB_WP_LEAFLET_MAP_Collections::create_tables();
     }
 
     /**
      * Desactivación: no borra datos.
      */
     public static function on_deactivation(): void {
-        if ( ! current_user_can( 'activate_plugins' ) ) {
-            return;
-        }
     }
 }
