@@ -249,6 +249,85 @@ class SJB_WP_LEAFLET_MAP_Collections {
     }
 
     /**
+     * Colección por slug.
+     */
+    public static function get_collection_by_slug( string $slug ): ?object {
+        global $wpdb;
+
+        $slug = sanitize_title( $slug );
+        if ( '' === $slug ) {
+            return null;
+        }
+
+        $table = self::table_collections();
+        $row   = $wpdb->get_row(
+            $wpdb->prepare( "SELECT * FROM {$table} WHERE slug = %s LIMIT 1", $slug ) // phpcs:ignore WordPress.DB.PreparedSQL.InterpolatedNotPrepared
+        );
+
+        return $row ?: null;
+    }
+
+    /**
+     * Modo de visualización de un marcador (hover|click|both|always).
+     */
+    public static function resolve_marker_display_mode( object $m ): string {
+        if ( ! empty( $m->show_always ) ) {
+            return 'always';
+        }
+
+        $hover = (int) $m->show_on_hover;
+        $click = (int) $m->show_on_click;
+
+        if ( $hover && $click ) {
+            return 'both';
+        }
+        if ( $hover ) {
+            return 'hover';
+        }
+        if ( $click ) {
+            return 'click';
+        }
+
+        return 'both';
+    }
+
+    /**
+     * Marcadores activos de una colección para el mapa (JSON frontend).
+     *
+     * @param int|string $id_or_slug ID numérico o slug.
+     * @return list<array{lat:float,lng:float,text:string,mode:string}>
+     */
+    public static function get_map_markers( $id_or_slug ): array {
+        $collection = null;
+
+        if ( is_numeric( $id_or_slug ) && (int) $id_or_slug > 0 ) {
+            $collection = self::get_collection( (int) $id_or_slug );
+        } else {
+            $collection = self::get_collection_by_slug( (string) $id_or_slug );
+        }
+
+        if ( ! $collection ) {
+            return array();
+        }
+
+        $out = array();
+        foreach ( self::get_markers( (int) $collection->id ) as $m ) {
+            if ( isset( $m->is_active ) && (int) $m->is_active === 0 ) {
+                continue;
+            }
+
+            $out[] = array(
+                'lat'  => (float) $m->lat,
+                'lng'  => (float) $m->lng,
+                'text' => (string) $m->text,
+                'mode' => self::resolve_marker_display_mode( $m ),
+            );
+        }
+
+        return $out;
+    }
+
+    /**
      * Un marcador por ID.
      */
     public static function get_marker( int $id ): ?object {

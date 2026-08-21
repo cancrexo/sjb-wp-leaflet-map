@@ -62,9 +62,9 @@ Inserta el mapa en una página o entrada:
 
 | Atributo | Por defecto | Descripción |
 |----------|-------------|-------------|
-| `lat` | `40.4168` | Latitud del centro |
-| `lng` | `-3.7038` | Longitud del centro |
-| `zoom` | `13` | Nivel de zoom |
+| `lat` | `42.4034506` | Latitud del centro |
+| `lng` | `-8.8091448` | Longitud del centro |
+| `zoom` | `13` | Nivel de zoom (0–19, límites Leaflet/OSM) |
 | `width` | `100%` | Ancho del contenedor (número = px) |
 | `height` | `400px` | Alto del contenedor (número = px) |
 | `id` | `Leaflet Map` | Identificador del contenedor (se sanitiza a clase HTML) |
@@ -79,9 +79,36 @@ Los assets de Leaflet solo se cargan en páginas donde aparece el shortcode.
 
 ---
 
+## Colección de marcadores
+
+Mapa centrado en lat/lng/zoom con los marcadores **activos** de una colección (por slug o ID):
+
+```
+[sjb_leaflet_collection collection="mi-coleccion" lat="42.8805" lng="-8.5457" zoom="14"]
+```
+
+### Atributos
+
+| Atributo | Por defecto | Descripción |
+|----------|-------------|-------------|
+| `collection` | *(vacío)* | Slug o ID de la colección |
+| `lat` | `42.4034506` | Latitud del centro |
+| `lng` | `-8.8091448` | Longitud del centro |
+| `zoom` | `13` | Nivel de zoom (0–19, límites Leaflet/OSM) |
+| `width` | `100%` | Ancho del contenedor |
+| `height` | `400px` | Alto del contenedor |
+| `id` | `Leaflet Collection` | Identificador del contenedor |
+
+Cada marcador respeta su modo de texto (`hover`, `click`, `both`, `always`). Los inactivos no se muestran.
+
+---
+
 ## WPBakery Page Builder
 
-Si WPBakery está activo, el shortcode aparece en la categoría **SJB Shortcodes** como **SJB Leaflet Map**, con los mismos atributos (lat, lng, zoom, width, height, id).
+Si WPBakery está activo, en **SJB Shortcodes** aparecen:
+
+- **SJB Leaflet Map** — mapa simple (lat, lng, zoom, width, height, id, marcador opcional).
+- **SJB Leaflet Collection** — mapa con dropdown de colecciones + lat, lng, zoom, width, height, id.
 
 ### Regla importante (mapeo VC)
 
