@@ -183,14 +183,16 @@ class SJB_WP_LEAFLET_MAP_Ajax {
         $collection_id = absint( $_POST['collection_id'] ?? 0 );
         $id            = SJB_WP_LEAFLET_MAP_Collections::save_marker(
             array(
-                'id'            => absint( $_POST['marker_id'] ?? 0 ),
-                'collection_id' => $collection_id,
-                'lat'           => wp_unslash( (string) ( $_POST['marker_lat'] ?? '' ) ),
-                'lng'           => wp_unslash( (string) ( $_POST['marker_lng'] ?? '' ) ),
-                'text'          => wp_unslash( (string) ( $_POST['marker_text'] ?? '' ) ),
-                'display_mode'  => sanitize_key( (string) ( $_POST['marker_display_mode'] ?? 'both' ) ),
-                'sort_order'    => absint( $_POST['marker_sort_order'] ?? 0 ),
-                'is_active'     => isset( $_POST['marker_is_active'] ) ? absint( $_POST['marker_is_active'] ) : 1,
+                'id'                 => absint( $_POST['marker_id'] ?? 0 ),
+                'collection_id'      => $collection_id,
+                'lat'                => wp_unslash( (string) ( $_POST['marker_lat'] ?? '' ) ),
+                'lng'                => wp_unslash( (string) ( $_POST['marker_lng'] ?? '' ) ),
+                'text'               => wp_unslash( (string) ( $_POST['marker_text'] ?? '' ) ),
+                'display_mode'       => sanitize_key( (string) ( $_POST['marker_display_mode'] ?? 'both' ) ),
+                'sort_order'         => absint( $_POST['marker_sort_order'] ?? 0 ),
+                'is_active'          => isset( $_POST['marker_is_active'] ) ? absint( $_POST['marker_is_active'] ) : 1,
+                'icon_source'        => wp_unslash( (string) ( $_POST['marker_icon_source'] ?? 'inherit' ) ),
+                'icon_attachment_id' => absint( $_POST['marker_icon_attachment'] ?? 0 ),
             )
         );
 

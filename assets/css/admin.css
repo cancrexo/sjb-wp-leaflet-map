@@ -195,6 +195,24 @@ body.modal-open .modal-backdrop {
     display: block;
 }
 
+.sjb-leaflet-admin .sjb-marker-icon-btn {
+    border: 0;
+    background: transparent;
+    padding: 0;
+    cursor: pointer;
+    line-height: 0;
+}
+
+.sjb-leaflet-admin .sjb-marker-icon-btn:hover .sjb-collection-icon-thumb,
+.sjb-leaflet-admin .sjb-marker-icon-btn:focus .sjb-collection-icon-thumb {
+    border-color: #2271b1;
+}
+
+.sjb-leaflet-admin .sjb-icon-inherit-preview {
+    display: flex;
+    align-items: center;
+}
+
 /* Botones de acción solo icono (tablas admin). */
 .sjb-leaflet-admin .sjb-icon-actions {
     white-space: nowrap;
@@ -457,5 +475,21 @@ body.modal-open .modal-backdrop {
 .sjb-leaflet-admin .sjb-config-cards > .card {
     flex: 1 1 280px;
     margin-bottom: 0;
+}
+
+/* Tablas de la pestaña Info. */
+.sjb-leaflet-admin .sjb-info-cards > .card {
+    flex: 1 1 360px;
+}
+
+.sjb-leaflet-admin .sjb-info-table th {
+    width: 38%;
+    font-weight: 600;
+    white-space: nowrap;
+    vertical-align: top;
+}
+
+.sjb-leaflet-admin .sjb-info-table td {
+    word-break: break-word;
 }
 

@@ -215,6 +215,7 @@
             idInput.value = attachmentId;
         }
 
+        const inheritPreview = picker.querySelector('[data-sjb-icon-inherit-preview]');
         const mediaRow = picker.querySelector('[data-sjb-icon-media-row]');
         const leafletPreview = picker.querySelector('[data-sjb-icon-leaflet-preview]');
         if (mediaRow) {
@@ -222,6 +223,9 @@
         }
         if (leafletPreview) {
             leafletPreview.classList.toggle('d-none', source !== 'leaflet');
+        }
+        if (inheritPreview) {
+            inheritPreview.classList.toggle('d-none', source !== 'inherit');
         }
 
         const preview = picker.querySelector('[data-sjb-icon-preview]');
@@ -461,9 +465,40 @@
         }
 
         const collectionId = table.getAttribute('data-collection-id') || '0';
+        const collectionIconUrl = table.getAttribute('data-collection-icon-url')
+            || cfg.leafletIconUrl
+            || '';
         const confirmDelete = table.getAttribute('data-confirm-delete')
             || i18n.markerConfirmDel
             || '¿Eliminar este marcador?';
+
+        /**
+         * Deja solo número decimal (signo, dígitos y un separador).
+         *
+         * @param {string} raw Valor del input.
+         * @returns {string}
+         */
+        function sanitizeCoordValue(raw) {
+            let out = '';
+            let hasSep = false;
+            const str = String(raw);
+            for (let i = 0; i < str.length; i++) {
+                const ch = str[i];
+                if (ch === '-' && out === '') {
+                    out += ch;
+                    continue;
+                }
+                if ((ch === '.' || ch === ',') && !hasSep) {
+                    out += ch;
+                    hasSep = true;
+                    continue;
+                }
+                if (ch >= '0' && ch <= '9') {
+                    out += ch;
+                }
+            }
+            return out;
+        }
 
         /**
          * ¿Lat/lng numéricos y en rango?
@@ -475,7 +510,8 @@
         function isValidCoords(latRaw, lngRaw) {
             const latStr = String(latRaw).trim().replace(',', '.');
             const lngStr = String(lngRaw).trim().replace(',', '.');
-            if (latStr === '' || lngStr === '') {
+            if (latStr === '' || lngStr === '' || latStr === '-' || lngStr === '-'
+                || latStr === '.' || lngStr === '.' || latStr === '-.' || lngStr === '-.') {
                 return false;
             }
             const lat = Number(latStr);
@@ -559,6 +595,8 @@
                 marker_display_mode: modeEl ? modeEl.value : 'both',
                 marker_sort_order: String(rowSortOrder(row)),
                 marker_is_active: row.dataset.active === '0' ? '0' : '1',
+                marker_icon_source: row.dataset.iconSource || 'inherit',
+                marker_icon_attachment: row.dataset.iconAttachment || '0',
             });
 
             row.dataset.saving = '0';
@@ -574,6 +612,30 @@
             }
 
             toast(result.message || i18n.markerSaved || 'Marcador guardado.', 'success');
+        }
+
+        /**
+         * Miniatura del icono resuelto (colección o propio).
+         *
+         * @param {HTMLTableRowElement} row Fila.
+         */
+        function applyMarkerIconThumb(row) {
+            const img = row.querySelector('.sjb-marker-icon-btn img');
+            const btn = row.querySelector('.sjb-marker-icon-btn');
+            if (!img) {
+                return;
+            }
+            const source = row.dataset.iconSource || 'inherit';
+            const preview = row.dataset.iconPreview || '';
+            const own = source === 'media' && preview;
+            img.src = own ? preview : collectionIconUrl;
+            if (btn) {
+                const label = own
+                    ? (i18n.iconOwn || 'Icono propio (clic para cambiar)')
+                    : (i18n.iconCollection || 'Icono de la colección (clic para cambiar)');
+                btn.setAttribute('title', label);
+                btn.setAttribute('aria-label', label);
+            }
         }
 
         /**
@@ -611,6 +673,7 @@
                 return;
             }
             tbody.appendChild(row);
+            applyMarkerIconThumb(row);
             validateRow(row);
             syncEmptyState();
             const latEl = row.querySelector('.sjb-marker-lat');
@@ -655,6 +718,10 @@
 
             applyStatusUi(row, source.dataset.active !== '0');
             row.dataset.markerId = '0';
+            row.dataset.iconSource = source.dataset.iconSource || 'inherit';
+            row.dataset.iconAttachment = source.dataset.iconAttachment || '0';
+            row.dataset.iconPreview = source.dataset.iconPreview || '';
+            applyMarkerIconThumb(row);
             source.after(row);
             validateRow(row);
             syncEmptyState();
@@ -747,6 +814,10 @@
             syncEmptyState();
         }
 
+        const iconModalEl = document.getElementById('sjb-modal-marker-icon');
+        const iconForm = document.getElementById('sjb-form-marker-icon');
+        let iconRow = null;
+
         addBtn.addEventListener('click', () => addEmptyRow());
 
         tbody.addEventListener('input', (event) => {
@@ -758,7 +829,22 @@
             if (!row || !tbody.contains(row)) {
                 return;
             }
-            if (target.matches('.sjb-marker-lat, .sjb-marker-lng, .sjb-marker-text')) {
+            if (target.matches('.sjb-marker-lat, .sjb-marker-lng')) {
+                if (target instanceof HTMLInputElement) {
+                    const before = target.value;
+                    const sanitized = sanitizeCoordValue(before);
+                    if (sanitized !== before) {
+                        const pos = target.selectionStart || 0;
+                        const diff = before.length - sanitized.length;
+                        target.value = sanitized;
+                        const caret = Math.max(0, pos - diff);
+                        target.setSelectionRange(caret, caret);
+                    }
+                }
+                scheduleSave(row);
+                return;
+            }
+            if (target.matches('.sjb-marker-text')) {
                 scheduleSave(row);
             }
         });
@@ -786,6 +872,21 @@
             if (!row || !tbody.contains(row)) {
                 return;
             }
+            if (target.closest('.sjb-marker-icon-btn')) {
+                const picker = iconForm ? iconForm.querySelector('[data-sjb-icon-picker]') : null;
+                iconRow = row;
+                if (picker) {
+                    setIconPickerState(picker, {
+                        source: row.dataset.iconSource || 'inherit',
+                        attachmentId: row.dataset.iconAttachment || '0',
+                        previewUrl: row.dataset.iconPreview || '',
+                    });
+                }
+                if (iconModalEl && window.bootstrap && bootstrap.Modal) {
+                    bootstrap.Modal.getOrCreateInstance(iconModalEl).show();
+                }
+                return;
+            }
             if (target.closest('.sjb-marker-status')) {
                 toggleStatus(row);
                 return;
@@ -798,6 +899,35 @@
                 deleteRow(row);
             }
         });
+
+        if (iconForm instanceof HTMLFormElement) {
+            iconForm.addEventListener('submit', (event) => {
+                event.preventDefault();
+                if (!iconRow) {
+                    return;
+                }
+                const picker = iconForm.querySelector('[data-sjb-icon-picker]');
+                const sourceRadio = picker ? picker.querySelector('.sjb-icon-source:checked') : null;
+                let source = sourceRadio ? sourceRadio.value : 'inherit';
+                const idInput = picker ? picker.querySelector('.sjb-icon-attachment-id') : null;
+                const previewImg = picker ? picker.querySelector('[data-sjb-icon-preview] img') : null;
+                let attachment = idInput ? String(idInput.value || '0') : '0';
+                let preview = previewImg ? (previewImg.getAttribute('src') || '') : '';
+                if (source !== 'media' || attachment === '0' || preview === '') {
+                    source = 'inherit';
+                    attachment = '0';
+                    preview = '';
+                }
+                iconRow.dataset.iconSource = source;
+                iconRow.dataset.iconAttachment = attachment;
+                iconRow.dataset.iconPreview = preview;
+                applyMarkerIconThumb(iconRow);
+                if (iconModalEl && window.bootstrap && bootstrap.Modal) {
+                    bootstrap.Modal.getOrCreateInstance(iconModalEl).hide();
+                }
+                saveRow(iconRow);
+            });
+        }
 
         tbody.querySelectorAll('.sjb-marker-row').forEach((row) => validateRow(row));
         syncEmptyState();

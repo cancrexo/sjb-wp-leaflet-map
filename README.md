@@ -39,7 +39,7 @@ Ruta: **Ajustes → SJB WP Leaflet Map**
 |---------|--------|
 | Configuración | Opción de borrar datos al desinstalar |
 | Marcadores | Colecciones + marcadores (CRUD vía AJAX, dos tablas) |
-| Info | Versión del plugin |
+| Info | Versión del plugin, servidor, PHP, BD, memoria, WP y WooCommerce |
 
 ### Borrar datos al desinstalar
 
@@ -145,7 +145,6 @@ sjb-wp-leaflet-map/
 Planes detallados en [`docs/`](docs/).
 
 - Colecciones de marcadores (admin, dos tablas): [`docs/20260821-plan-colecciones-marcadores.md`](docs/20260821-plan-colecciones-marcadores.md) — admin CRUD hecho; falta enlazar shortcode ↔ colección
-- Ampliar pestaña Info
 - (Más ítems según avance el desarrollo)
 
 ---

@@ -36,8 +36,9 @@ class SJB_WP_LEAFLET_MAP {
     public static $slug;
     /** @var string */
     public static $noslug;
-    public static string $version = '0.1.0';
-    public static string $title   = 'SJB WP Leaflet Map';
+    public static string $version         = '0.1.0';
+    public static string $leaflet_version = '1.9.4';
+    public static string $title           = 'SJB WP Leaflet Map';
     /** @var string */
     public static $plugindir;
     /** @var string */
@@ -128,6 +129,257 @@ class SJB_WP_LEAFLET_MAP {
             'version'                => self::$version,
             'marker_icon_source'     => 'leaflet',
             'marker_icon_attachment' => 0,
+        );
+    }
+
+    /**
+     * Datos de entorno para la pestaña Info (servidor, PHP, BD, versiones).
+     *
+     * @return array<int, array{title: string, rows: array<int, array{label: string, value: string}>}>
+     */
+    public static function get_system_info(): array {
+        global $wpdb;
+
+        $na = '—';
+
+        $yes = __( 'Sí', 'sjb-wp-leaflet-map' );
+        $no  = __( 'No', 'sjb-wp-leaflet-map' );
+
+        $ini = static function ( string $key ) use ( $na ): string {
+            $raw = ini_get( $key );
+            if ( false === $raw || '' === $raw ) {
+                return $na;
+            }
+
+            return (string) $raw;
+        };
+
+        $bytes = static function ( string $raw ) use ( $na ): string {
+            if ( '' === $raw || $na === $raw ) {
+                return $na;
+            }
+            $pretty = size_format( wp_convert_hr_to_bytes( $raw ) );
+
+            return $pretty ? $pretty . ' (' . $raw . ')' : $raw;
+        };
+
+        $wp_version = function_exists( 'wp_get_wp_version' )
+            ? wp_get_wp_version()
+            : get_bloginfo( 'version' );
+
+        $woo = __( 'No activo', 'sjb-wp-leaflet-map' );
+        if ( defined( 'WC_VERSION' ) ) {
+            $woo = (string) WC_VERSION;
+        } elseif ( class_exists( 'WooCommerce', false ) && function_exists( 'WC' ) ) {
+            $woo = (string) WC()->version;
+        }
+
+        $theme        = wp_get_theme();
+        $theme_label  = $theme->get( 'Name' ) . ' ' . $theme->get( 'Version' );
+        $parent_theme = $theme->parent();
+        if ( $parent_theme ) {
+            $theme_label .= ' (' . sprintf(
+                /* translators: %s: nombre y versión del tema padre */
+                __( 'hijo de %s', 'sjb-wp-leaflet-map' ),
+                $parent_theme->get( 'Name' ) . ' ' . $parent_theme->get( 'Version' )
+            ) . ')';
+        }
+
+        $server = isset( $_SERVER['SERVER_SOFTWARE'] )
+            ? sanitize_text_field( wp_unslash( (string) $_SERVER['SERVER_SOFTWARE'] ) )
+            : $na;
+
+        $os = php_uname( 's' );
+        $os_rel = php_uname( 'r' );
+        if ( $os_rel ) {
+            $os .= ' ' . $os_rel;
+        }
+
+        $db_version = (string) $wpdb->get_var( 'SELECT VERSION()' );
+        if ( '' === $db_version && method_exists( $wpdb, 'db_server_info' ) ) {
+            $db_version = (string) $wpdb->db_server_info();
+        }
+        $db_engine = ( false !== stripos( $db_version, 'mariadb' ) )
+            ? 'MariaDB'
+            : 'MySQL';
+
+        $wanted_ext = array( 'curl', 'gd', 'imagick', 'intl', 'json', 'mbstring', 'mysqli', 'zip' );
+        $ext_bits   = array();
+        foreach ( $wanted_ext as $ext ) {
+            if ( extension_loaded( $ext ) ) {
+                $ext_bits[] = $ext;
+            }
+        }
+
+        $mem_usage = size_format( (int) memory_get_usage( true ) );
+        $mem_peak  = size_format( (int) memory_get_peak_usage( true ) );
+
+        $wp_mem     = defined( 'WP_MEMORY_LIMIT' ) ? (string) WP_MEMORY_LIMIT : $na;
+        $wp_mem_max = defined( 'WP_MAX_MEMORY_LIMIT' ) ? (string) WP_MAX_MEMORY_LIMIT : $na;
+
+        $max_exec = $ini( 'max_execution_time' );
+        if ( $na !== $max_exec ) {
+            $max_exec .= ' s';
+        }
+
+        return array(
+            array(
+                'title' => __( 'Plugin', 'sjb-wp-leaflet-map' ),
+                'rows'  => array(
+                    array(
+                        'label' => __( 'Nombre', 'sjb-wp-leaflet-map' ),
+                        'value' => self::$title,
+                    ),
+                    array(
+                        'label' => __( 'Versión del plugin', 'sjb-wp-leaflet-map' ),
+                        'value' => self::$version,
+                    ),
+                    array(
+                        'label' => __( 'Leaflet (vendor)', 'sjb-wp-leaflet-map' ),
+                        'value' => self::$leaflet_version,
+                    ),
+                    array(
+                        'label' => __( 'PHP requerido', 'sjb-wp-leaflet-map' ),
+                        'value' => '8.3+',
+                    ),
+                    array(
+                        'label' => __( 'WordPress requerido', 'sjb-wp-leaflet-map' ),
+                        'value' => '6.0+',
+                    ),
+                ),
+            ),
+            array(
+                'title' => __( 'WordPress y comercio', 'sjb-wp-leaflet-map' ),
+                'rows'  => array(
+                    array(
+                        'label' => __( 'WordPress', 'sjb-wp-leaflet-map' ),
+                        'value' => (string) $wp_version,
+                    ),
+                    array(
+                        'label' => __( 'WooCommerce', 'sjb-wp-leaflet-map' ),
+                        'value' => $woo,
+                    ),
+                    array(
+                        'label' => __( 'Tema', 'sjb-wp-leaflet-map' ),
+                        'value' => $theme_label,
+                    ),
+                    array(
+                        'label' => __( 'URL del sitio', 'sjb-wp-leaflet-map' ),
+                        'value' => home_url( '/' ),
+                    ),
+                    array(
+                        'label' => __( 'Idioma', 'sjb-wp-leaflet-map' ),
+                        'value' => get_locale(),
+                    ),
+                    array(
+                        'label' => __( 'Multisitio', 'sjb-wp-leaflet-map' ),
+                        'value' => is_multisite() ? $yes : $no,
+                    ),
+                    array(
+                        'label' => __( 'WP_DEBUG', 'sjb-wp-leaflet-map' ),
+                        'value' => ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? $yes : $no,
+                    ),
+                    array(
+                        'label' => __( 'Memoria WP', 'sjb-wp-leaflet-map' ),
+                        'value' => $bytes( $wp_mem ),
+                    ),
+                    array(
+                        'label' => __( 'Memoria WP (admin)', 'sjb-wp-leaflet-map' ),
+                        'value' => $bytes( $wp_mem_max ),
+                    ),
+                ),
+            ),
+            array(
+                'title' => __( 'Servidor', 'sjb-wp-leaflet-map' ),
+                'rows'  => array(
+                    array(
+                        'label' => __( 'Software', 'sjb-wp-leaflet-map' ),
+                        'value' => $server,
+                    ),
+                    array(
+                        'label' => __( 'Sistema operativo', 'sjb-wp-leaflet-map' ),
+                        'value' => ( '' !== $os ) ? $os : $na,
+                    ),
+                    array(
+                        'label' => __( 'Arquitectura', 'sjb-wp-leaflet-map' ),
+                        'value' => php_uname( 'm' ) ?: $na,
+                    ),
+                    array(
+                        'label' => __( 'Hostname', 'sjb-wp-leaflet-map' ),
+                        'value' => php_uname( 'n' ) ?: $na,
+                    ),
+                    array(
+                        'label' => __( 'SAPI PHP', 'sjb-wp-leaflet-map' ),
+                        'value' => PHP_SAPI,
+                    ),
+                ),
+            ),
+            array(
+                'title' => __( 'PHP y memoria', 'sjb-wp-leaflet-map' ),
+                'rows'  => array(
+                    array(
+                        'label' => __( 'Versión PHP', 'sjb-wp-leaflet-map' ),
+                        'value' => PHP_VERSION,
+                    ),
+                    array(
+                        'label' => __( 'memory_limit', 'sjb-wp-leaflet-map' ),
+                        'value' => $bytes( $ini( 'memory_limit' ) ),
+                    ),
+                    array(
+                        'label' => __( 'Uso actual', 'sjb-wp-leaflet-map' ),
+                        'value' => $mem_usage ? $mem_usage : $na,
+                    ),
+                    array(
+                        'label' => __( 'Pico de uso', 'sjb-wp-leaflet-map' ),
+                        'value' => $mem_peak ? $mem_peak : $na,
+                    ),
+                    array(
+                        'label' => __( 'max_execution_time', 'sjb-wp-leaflet-map' ),
+                        'value' => $max_exec,
+                    ),
+                    array(
+                        'label' => __( 'max_input_vars', 'sjb-wp-leaflet-map' ),
+                        'value' => $ini( 'max_input_vars' ),
+                    ),
+                    array(
+                        'label' => __( 'post_max_size', 'sjb-wp-leaflet-map' ),
+                        'value' => $bytes( $ini( 'post_max_size' ) ),
+                    ),
+                    array(
+                        'label' => __( 'upload_max_filesize', 'sjb-wp-leaflet-map' ),
+                        'value' => $bytes( $ini( 'upload_max_filesize' ) ),
+                    ),
+                    array(
+                        'label' => __( 'Extensiones', 'sjb-wp-leaflet-map' ),
+                        'value' => $ext_bits ? implode( ', ', $ext_bits ) : $na,
+                    ),
+                ),
+            ),
+            array(
+                'title' => __( 'Base de datos', 'sjb-wp-leaflet-map' ),
+                'rows'  => array(
+                    array(
+                        'label' => __( 'Motor', 'sjb-wp-leaflet-map' ),
+                        'value' => $db_engine,
+                    ),
+                    array(
+                        'label' => __( 'Versión', 'sjb-wp-leaflet-map' ),
+                        'value' => '' !== $db_version ? $db_version : $na,
+                    ),
+                    array(
+                        'label' => __( 'Charset', 'sjb-wp-leaflet-map' ),
+                        'value' => $wpdb->charset ? (string) $wpdb->charset : $na,
+                    ),
+                    array(
+                        'label' => __( 'Collation', 'sjb-wp-leaflet-map' ),
+                        'value' => $wpdb->collate ? (string) $wpdb->collate : $na,
+                    ),
+                    array(
+                        'label' => __( 'Prefijo de tablas', 'sjb-wp-leaflet-map' ),
+                        'value' => (string) $wpdb->prefix,
+                    ),
+                ),
+            ),
         );
     }
 
@@ -246,6 +498,8 @@ class SJB_WP_LEAFLET_MAP {
                     'iconSelect'        => __( 'Seleccionar imagen', 'sjb-wp-leaflet-map' ),
                     'iconChange'        => __( 'Cambiar imagen', 'sjb-wp-leaflet-map' ),
                     'iconTitle'         => __( 'Icono del marcador', 'sjb-wp-leaflet-map' ),
+                    'iconCollection'    => __( 'Icono de la colección (clic para cambiar)', 'sjb-wp-leaflet-map' ),
+                    'iconOwn'           => __( 'Icono propio (clic para cambiar)', 'sjb-wp-leaflet-map' ),
                 ),
                 'leafletIconUrl' => self::$path2assets . 'vendor/leaflet/images/marker-icon.png',
             )

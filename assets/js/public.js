@@ -2,9 +2,10 @@
  * Inicializa los mapas Leaflet renderizados por los shortcodes.
  * Compatible con footer y con carga async/defer.
  *
- * - Colección: data-markers = JSON [{lat,lng,text,mode}, ...]
+ * - Colección: data-markers = JSON [{lat,lng,text,mode,icon_url?}, ...]
  * - Mapa simple: data-marker-lat/lng/text + data-marker-mode
- * - Icono: data-icon-url (+ width/height); vacío = Leaflet default
+ * - Icono mapa: data-icon-url (+ width/height); vacío = Leaflet default
+ * - Icono por marcador: icon_url en el JSON (si no, el del mapa)
  * Modos de texto: hover | click | both | always
  * «always» usa tooltip permanente de Leaflet ({ permanent: true }).
  */
@@ -80,19 +81,21 @@
     };
 
     /**
-     * Icono Leaflet desde data-icon-* del contenedor (o default nativo).
+     * Crea un icono Leaflet a partir de URL y tamaño (vacío = default nativo).
      *
-     * @param {HTMLElement} el Contenedor.
+     * @param {string|undefined} url URL.
+     * @param {number|string|undefined} widthRaw Ancho.
+     * @param {number|string|undefined} heightRaw Alto.
      * @returns {L.Icon|undefined}
      */
-    const readMapIcon = (el) => {
-        const url = (el.dataset.iconUrl || '').trim();
-        if (!url) {
+    const buildIcon = (url, widthRaw, heightRaw) => {
+        const iconUrl = String(url || '').trim();
+        if (!iconUrl) {
             return undefined;
         }
 
-        let width = parseInt(el.dataset.iconWidth, 10);
-        let height = parseInt(el.dataset.iconHeight, 10);
+        let width = parseInt(widthRaw, 10);
+        let height = parseInt(heightRaw, 10);
         if (Number.isNaN(width) || width < 1) {
             width = 25;
         }
@@ -100,7 +103,6 @@
             height = 41;
         }
 
-        // Limitar tamaño visual en mapa (imágenes grandes de la media library).
         const maxSide = 48;
         if (width > maxSide || height > maxSide) {
             const scale = maxSide / Math.max(width, height);
@@ -109,7 +111,7 @@
         }
 
         return L.icon({
-            iconUrl: url,
+            iconUrl,
             iconSize: [width, height],
             iconAnchor: [Math.round(width / 2), height],
             popupAnchor: [0, -height],
@@ -144,7 +146,7 @@
                 maxZoom: 19,
             }).addTo(map);
 
-            const icon = readMapIcon(el);
+            const mapIcon = buildIcon(el.dataset.iconUrl, el.dataset.iconWidth, el.dataset.iconHeight);
 
             readMarkers(el).forEach((item) => {
                 const mLat = parseFloat(item.lat);
@@ -153,7 +155,8 @@
                     return;
                 }
 
-                const opts = icon ? { icon } : undefined;
+                const itemIcon = buildIcon(item.icon_url, item.icon_width, item.icon_height) || mapIcon;
+                const opts = itemIcon ? { icon: itemIcon } : undefined;
                 const marker = L.marker([mLat, mLng], opts).addTo(map);
                 bindMarkerText(marker, item.text || '', item.mode || 'both');
             });

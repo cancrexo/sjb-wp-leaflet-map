@@ -305,6 +305,11 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
     };
 
     $mode_options = $marker_mode_options();
+    $leaflet_icon = SJB_WP_LEAFLET_MAP::$path2assets . 'vendor/leaflet/images/marker-icon.png';
+    $coll_icon    = SJB_WP_LEAFLET_MAP_Collections::resolve_map_icon( $collection );
+    $coll_icon_url = ( 'media' === $coll_icon['source'] && '' !== $coll_icon['url'] )
+        ? $coll_icon['url']
+        : $leaflet_icon;
     ?>
 
     <p class="mb-3">
@@ -321,10 +326,12 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
         class="table table-bordered align-middle mb-2<?php echo $markers ? '' : ' d-none'; ?>"
         id="sjb-markers-table"
         data-collection-id="<?php echo esc_attr( (string) $collection->id ); ?>"
+        data-collection-icon-url="<?php echo esc_url( $coll_icon_url ); ?>"
         data-confirm-delete="<?php echo esc_attr( $confirm_delete_marker ); ?>"
     >
         <thead>
             <tr>
+                <th class="sjb-col-icon"><?php esc_html_e( 'Icono', 'sjb-wp-leaflet-map' ); ?></th>
                 <th style="width: 8rem;"><?php esc_html_e( 'Latitud', 'sjb-wp-leaflet-map' ); ?></th>
                 <th style="width: 8rem;"><?php esc_html_e( 'Longitud', 'sjb-wp-leaflet-map' ); ?></th>
                 <th><?php esc_html_e( 'Texto', 'sjb-wp-leaflet-map' ); ?></th>
@@ -338,8 +345,42 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
                 <?php
                 $mode      = $resolve_marker_mode( $m );
                 $is_active = ! isset( $m->is_active ) || (int) $m->is_active === 1;
+                $icon_src  = isset( $m->icon_source ) ? sanitize_key( (string) $m->icon_source ) : 'inherit';
+                if ( ! in_array( $icon_src, array( 'inherit', 'media' ), true ) ) {
+                    $icon_src = 'inherit';
+                }
+                $icon_att     = isset( $m->icon_attachment_id ) ? absint( $m->icon_attachment_id ) : 0;
+                $icon_preview = ( 'media' === $icon_src && $icon_att > 0 )
+                    ? (string) wp_get_attachment_image_url( $icon_att, 'thumbnail' )
+                    : '';
+                $resolved     = SJB_WP_LEAFLET_MAP_Collections::resolve_map_icon( $collection, $m );
+                $thumb_url    = ( 'media' === $resolved['source'] && '' !== $resolved['url'] )
+                    ? $resolved['url']
+                    : $leaflet_icon;
+                $icon_title   = ( 'media' === $icon_src )
+                    ? __( 'Icono propio (clic para cambiar)', 'sjb-wp-leaflet-map' )
+                    : __( 'Icono de la colección (clic para cambiar)', 'sjb-wp-leaflet-map' );
                 ?>
-                <tr class="sjb-marker-row" data-marker-id="<?php echo esc_attr( (string) $m->id ); ?>" data-active="<?php echo $is_active ? '1' : '0'; ?>">
+                <tr
+                    class="sjb-marker-row"
+                    data-marker-id="<?php echo esc_attr( (string) $m->id ); ?>"
+                    data-active="<?php echo $is_active ? '1' : '0'; ?>"
+                    data-icon-source="<?php echo esc_attr( $icon_src ); ?>"
+                    data-icon-attachment="<?php echo esc_attr( (string) $icon_att ); ?>"
+                    data-icon-preview="<?php echo esc_url( $icon_preview ); ?>"
+                >
+                    <td class="sjb-col-icon">
+                        <button
+                            type="button"
+                            class="sjb-marker-icon-btn"
+                            title="<?php echo esc_attr( $icon_title ); ?>"
+                            aria-label="<?php echo esc_attr( $icon_title ); ?>"
+                        >
+                            <span class="sjb-collection-icon-thumb">
+                                <img src="<?php echo esc_url( $thumb_url ); ?>" alt="">
+                            </span>
+                        </button>
+                    </td>
                     <td>
                         <input
                             type="text"
@@ -347,6 +388,10 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
                             value="<?php echo esc_attr( (string) $m->lat ); ?>"
                             inputmode="decimal"
                             autocomplete="off"
+                            spellcheck="false"
+                            min="-90"
+                            max="90"
+                            title="<?php esc_attr_e( 'Latitud: de -90 a 90', 'sjb-wp-leaflet-map' ); ?>"
                         >
                     </td>
                     <td>
@@ -356,6 +401,10 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
                             value="<?php echo esc_attr( (string) $m->lng ); ?>"
                             inputmode="decimal"
                             autocomplete="off"
+                            spellcheck="false"
+                            min="-180"
+                            max="180"
+                            title="<?php esc_attr_e( 'Longitud: de -180 a 180', 'sjb-wp-leaflet-map' ); ?>"
                         >
                     </td>
                     <td>
@@ -417,12 +466,24 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
     </div>
 
     <template id="sjb-marker-row-template">
-        <tr class="sjb-marker-row" data-marker-id="0" data-active="1">
-            <td>
-                <input type="text" class="form-control form-control-sm sjb-marker-lat" value="" inputmode="decimal" autocomplete="off">
+        <tr class="sjb-marker-row" data-marker-id="0" data-active="1" data-icon-source="inherit" data-icon-attachment="0" data-icon-preview="">
+            <td class="sjb-col-icon">
+                <button
+                    type="button"
+                    class="sjb-marker-icon-btn"
+                    title="<?php esc_attr_e( 'Icono de la colección (clic para cambiar)', 'sjb-wp-leaflet-map' ); ?>"
+                    aria-label="<?php esc_attr_e( 'Icono de la colección (clic para cambiar)', 'sjb-wp-leaflet-map' ); ?>"
+                >
+                    <span class="sjb-collection-icon-thumb">
+                        <img src="<?php echo esc_url( $coll_icon_url ); ?>" alt="">
+                    </span>
+                </button>
             </td>
             <td>
-                <input type="text" class="form-control form-control-sm sjb-marker-lng" value="" inputmode="decimal" autocomplete="off">
+                <input type="text" class="form-control form-control-sm sjb-marker-lat" value="" inputmode="decimal" autocomplete="off" spellcheck="false" min="-90" max="90" title="<?php esc_attr_e( 'Latitud: de -90 a 90', 'sjb-wp-leaflet-map' ); ?>">
+            </td>
+            <td>
+                <input type="text" class="form-control form-control-sm sjb-marker-lng" value="" inputmode="decimal" autocomplete="off" spellcheck="false" min="-180" max="180" title="<?php esc_attr_e( 'Longitud: de -180 a 180', 'sjb-wp-leaflet-map' ); ?>">
             </td>
             <td>
                 <textarea class="form-control form-control-sm sjb-marker-text" rows="2"></textarea>
@@ -468,4 +529,67 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
             </td>
         </tr>
     </template>
+
+    <div class="modal fade" id="sjb-modal-marker-icon" tabindex="-1" aria-labelledby="sjb-modal-marker-icon-label" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form id="sjb-form-marker-icon">
+                    <div class="modal-header">
+                        <h2 class="modal-title h5" id="sjb-modal-marker-icon-label">
+                            <?php esc_html_e( 'Icono del marcador', 'sjb-wp-leaflet-map' ); ?>
+                        </h2>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="<?php esc_attr_e( 'Cerrar', 'sjb-wp-leaflet-map' ); ?>"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="sjb-icon-picker" data-sjb-icon-picker>
+                            <div class="mb-3">
+                                <div class="form-check">
+                                    <input class="form-check-input sjb-icon-source" type="radio" name="marker_icon_source" id="marker_row_icon_inherit" value="inherit" checked>
+                                    <label class="form-check-label" for="marker_row_icon_inherit">
+                                        <?php esc_html_e( 'Usar el icono de la colección', 'sjb-wp-leaflet-map' ); ?>
+                                    </label>
+                                </div>
+                                <div class="sjb-icon-inherit-preview mt-2" data-sjb-icon-inherit-preview>
+                                    <span class="sjb-collection-icon-thumb">
+                                        <img src="<?php echo esc_url( $coll_icon_url ); ?>" alt="">
+                                    </span>
+                                    <span class="text-muted small ms-2"><?php esc_html_e( 'Vista previa del icono de la colección', 'sjb-wp-leaflet-map' ); ?></span>
+                                </div>
+                                <div class="form-check mt-3">
+                                    <input class="form-check-input sjb-icon-source" type="radio" name="marker_icon_source" id="marker_row_icon_media" value="media">
+                                    <label class="form-check-label" for="marker_row_icon_media">
+                                        <?php esc_html_e( 'Imagen propia (biblioteca multimedia)', 'sjb-wp-leaflet-map' ); ?>
+                                    </label>
+                                </div>
+                            </div>
+                            <div class="sjb-icon-media-row mb-0 d-none" data-sjb-icon-media-row>
+                                <input type="hidden" name="marker_icon_attachment" class="sjb-icon-attachment-id" value="0">
+                                <div class="d-flex align-items-center gap-3 flex-wrap">
+                                    <div class="sjb-icon-preview" data-sjb-icon-preview>
+                                        <span class="text-muted small"><?php esc_html_e( 'Ninguna imagen seleccionada', 'sjb-wp-leaflet-map' ); ?></span>
+                                    </div>
+                                    <div class="d-flex gap-2">
+                                        <button type="button" class="btn btn-outline-primary btn-sm sjb-icon-select">
+                                            <?php esc_html_e( 'Seleccionar imagen', 'sjb-wp-leaflet-map' ); ?>
+                                        </button>
+                                        <button type="button" class="btn btn-outline-secondary btn-sm sjb-icon-clear d-none">
+                                            <?php esc_html_e( 'Quitar', 'sjb-wp-leaflet-map' ); ?>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">
+                            <?php esc_html_e( 'Cancelar', 'sjb-wp-leaflet-map' ); ?>
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <?php esc_html_e( 'Aplicar', 'sjb-wp-leaflet-map' ); ?>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 <?php endif; ?>

@@ -68,6 +68,8 @@ class SJB_WP_LEAFLET_MAP_Collections {
             show_always tinyint(1) NOT NULL DEFAULT 0,
             is_active tinyint(1) NOT NULL DEFAULT 1,
             sort_order int(11) NOT NULL DEFAULT 0,
+            icon_source varchar(20) NOT NULL DEFAULT 'inherit',
+            icon_attachment_id bigint(20) unsigned NOT NULL DEFAULT 0,
             created_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
             updated_at datetime NOT NULL DEFAULT '0000-00-00 00:00:00',
             PRIMARY KEY  (id),
@@ -304,7 +306,7 @@ class SJB_WP_LEAFLET_MAP_Collections {
      * Marcadores activos de una colección para el mapa (JSON frontend).
      *
      * @param int|string $id_or_slug ID numérico o slug.
-     * @return list<array{lat:float,lng:float,text:string,mode:string}>
+     * @return list<array{lat:float,lng:float,text:string,mode:string,icon_url?:string,icon_width?:int,icon_height?:int}>
      */
     public static function get_map_markers( $id_or_slug ): array {
         $collection = null;
@@ -325,24 +327,56 @@ class SJB_WP_LEAFLET_MAP_Collections {
                 continue;
             }
 
-            $out[] = array(
+            $item = array(
                 'lat'  => (float) $m->lat,
                 'lng'  => (float) $m->lng,
                 'text' => (string) $m->text,
                 'mode' => self::resolve_marker_display_mode( $m ),
             );
+
+            $marker_source = isset( $m->icon_source ) ? sanitize_key( (string) $m->icon_source ) : 'inherit';
+            if ( 'media' === $marker_source ) {
+                $resolved = self::resolve_map_icon( $collection, $m );
+                if ( 'media' === $resolved['source'] && '' !== $resolved['url'] ) {
+                    $item['icon_url']    = $resolved['url'];
+                    $item['icon_width']  = $resolved['width'];
+                    $item['icon_height'] = $resolved['height'];
+                }
+            }
+
+            $out[] = $item;
         }
 
         return $out;
     }
 
     /**
-     * Resuelve el icono del mapa: colección (si hay) o ajustes globales.
+     * Resuelve el icono del mapa: marcador (si hay) → colección → ajustes globales.
      *
      * @param object|null $collection Colección o null (mapa simple / heredar).
+     * @param object|null $marker     Marcador o null (usar colección / global).
      * @return array{source:string,url:string,width:int,height:int}
      */
-    public static function resolve_map_icon( ?object $collection = null ): array {
+    public static function resolve_map_icon( ?object $collection = null, ?object $marker = null ): array {
+        $marker_source = ( $marker && isset( $marker->icon_source ) )
+            ? sanitize_key( (string) $marker->icon_source )
+            : 'inherit';
+
+        if ( 'media' === $marker_source ) {
+            $marker_att = isset( $marker->icon_attachment_id ) ? absint( $marker->icon_attachment_id ) : 0;
+            if ( $marker_att > 0 ) {
+                $img = wp_get_attachment_image_src( $marker_att, 'full' );
+                if ( is_array( $img ) && ! empty( $img[0] ) ) {
+                    return array(
+                        'source' => 'media',
+                        'url'    => (string) $img[0],
+                        'width'  => isset( $img[1] ) ? (int) $img[1] : 0,
+                        'height' => isset( $img[2] ) ? (int) $img[2] : 0,
+                    );
+                }
+            }
+        }
+
         $source = 'leaflet';
         $att_id = 0;
 
@@ -444,12 +478,19 @@ class SJB_WP_LEAFLET_MAP_Collections {
             return 0;
         }
 
+        $lat_raw = str_replace( ',', '.', $lat_raw );
+        $lng_raw = str_replace( ',', '.', $lng_raw );
+
         if ( ! is_numeric( $lat_raw ) || ! is_numeric( $lng_raw ) ) {
             return 0;
         }
 
         $lat = (float) $lat_raw;
         $lng = (float) $lng_raw;
+
+        if ( $lat < -90 || $lat > 90 || $lng < -180 || $lng > 180 ) {
+            return 0;
+        }
 
         $existing = ( $id > 0 ) ? self::get_marker( $id ) : null;
 
@@ -461,18 +502,37 @@ class SJB_WP_LEAFLET_MAP_Collections {
             $is_active = 1;
         }
 
+        if ( array_key_exists( 'icon_source', $data ) ) {
+            $icon_source = sanitize_key( (string) $data['icon_source'] );
+            if ( ! in_array( $icon_source, array( 'inherit', 'media' ), true ) ) {
+                $icon_source = 'inherit';
+            }
+            $icon_attachment_id = absint( $data['icon_attachment_id'] ?? 0 );
+            if ( 'media' !== $icon_source ) {
+                $icon_attachment_id = 0;
+            }
+        } elseif ( $existing ) {
+            $icon_source        = isset( $existing->icon_source ) ? sanitize_key( (string) $existing->icon_source ) : 'inherit';
+            $icon_attachment_id = isset( $existing->icon_attachment_id ) ? absint( $existing->icon_attachment_id ) : 0;
+        } else {
+            $icon_source        = 'inherit';
+            $icon_attachment_id = 0;
+        }
+
         $table = self::table_markers();
         $row   = array(
-            'collection_id' => $collection_id,
-            'lat'           => $lat,
-            'lng'           => $lng,
-            'text'          => $text,
-            'show_on_hover' => $show_on_hover,
-            'show_on_click' => $show_on_click,
-            'show_always'   => $show_always,
-            'is_active'     => $is_active,
-            'sort_order'    => $sort_order,
-            'updated_at'    => $now,
+            'collection_id'      => $collection_id,
+            'lat'                => $lat,
+            'lng'                => $lng,
+            'text'               => $text,
+            'show_on_hover'      => $show_on_hover,
+            'show_on_click'      => $show_on_click,
+            'show_always'        => $show_always,
+            'is_active'          => $is_active,
+            'sort_order'         => $sort_order,
+            'icon_source'        => $icon_source,
+            'icon_attachment_id' => $icon_attachment_id,
+            'updated_at'         => $now,
         );
 
         if ( $existing ) {
@@ -480,7 +540,7 @@ class SJB_WP_LEAFLET_MAP_Collections {
                 $table,
                 $row,
                 array( 'id' => $id ),
-                array( '%d', '%f', '%f', '%s', '%d', '%d', '%d', '%d', '%d', '%s' ),
+                array( '%d', '%f', '%f', '%s', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%s' ),
                 array( '%d' )
             );
 
@@ -491,7 +551,7 @@ class SJB_WP_LEAFLET_MAP_Collections {
         $wpdb->insert(
             $table,
             $row,
-            array( '%d', '%f', '%f', '%s', '%d', '%d', '%d', '%d', '%d', '%s', '%s' )
+            array( '%d', '%f', '%f', '%s', '%d', '%d', '%d', '%d', '%d', '%s', '%d', '%s', '%s' )
         );
 
         return (int) $wpdb->insert_id;
