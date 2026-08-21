@@ -38,7 +38,7 @@ Ruta: **Ajustes → SJB WP Leaflet Map**
 | Pestaña | Estado |
 |---------|--------|
 | Configuración | Opción de borrar datos al desinstalar |
-| Marcadores | Pendiente |
+| Marcadores | Colecciones + marcadores (CRUD vía AJAX, dos tablas) |
 | Info | Versión del plugin |
 
 ### Borrar datos al desinstalar
@@ -46,7 +46,7 @@ Ruta: **Ajustes → SJB WP Leaflet Map**
 - **Desactivado** (por defecto): al desinstalar se conservan las opciones en la base de datos.
 - **Activado**: al desinstalar se eliminan las opciones del plugin.
 
-Guarda los cambios con el botón **Guardar cambios**.
+Guarda los cambios con el botón **Guardar cambios** (AJAX, sin recargar la página; feedback con toast).
 
 ---
 
@@ -95,11 +95,14 @@ WPBakery exige que el shortcode **acepte al menos un parámetro** y que ese par�
 sjb-wp-leaflet-map/
 ├── sjb-wp-leaflet-map.php   # Bootstrap y admin
 ├── includes/
-│   └── class-shortcodes.php # Shortcodes, assets públicos, WPBakery
+│   ├── class-shortcodes.php   # Shortcodes, assets públicos, WPBakery
+│   ├── class-collections.php  # Tablas y CRUD colecciones/marcadores
+│   └── class-ajax.php         # Handlers wp_ajax_* (escritura admin)
 ├── uninstall.php
+├── docs/                    # Planes
 ├── assets/
 │   ├── css/                 # admin.css, public.css
-│   ├── js/                  # public.js
+│   ├── js/                  # admin.js, public.js
 │   └── vendor/
 │       ├── bootstrap/       # UI admin
 │       └── leaflet/         # Leaflet 1.9.4
@@ -112,7 +115,9 @@ sjb-wp-leaflet-map/
 
 ## Roadmap / pendiente
 
-- Gestión de marcadores (admin + frontend)
+Planes detallados en [`docs/`](docs/).
+
+- Colecciones de marcadores (admin, dos tablas): [`docs/20260821-plan-colecciones-marcadores.md`](docs/20260821-plan-colecciones-marcadores.md) — admin CRUD hecho; falta enlazar shortcode ↔ colección
 - Ampliar pestaña Info
 - (Más ítems según avance el desarrollo)
 
@@ -124,4 +129,4 @@ GPL v2 or later
 
 ## Autor
 
-SJB Dixital — [sjbdixtal.es](https://www.sjbdixtal.es)
+SJB Dixital — [sjbdixital.es](https://www.sjbdixital.es)

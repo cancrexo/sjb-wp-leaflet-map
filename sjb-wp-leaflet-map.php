@@ -1,11 +1,11 @@
 <?php
 /**
  * Plugin Name: SJB WP Leaflet Map
- * Plugin URI: https://www.sjbdixtal.es
+ * Plugin URI: https://www.sjbdixital.es
  * Description: Mapas interactivos con Leaflet para WordPress.
  * Version: 0.1.0
  * Author: SJB Dixital
- * Author URI: https://www.sjbdixtal.es
+ * Author URI: https://www.sjbdixital.es
  * Requires at least: 6.0
  * Requires PHP: 8.3
  * Text Domain: sjb-wp-leaflet-map
@@ -19,6 +19,8 @@
 defined( 'ABSPATH' ) || exit;
 
 require_once __DIR__ . '/includes/class-shortcodes.php';
+require_once __DIR__ . '/includes/class-collections.php';
+require_once __DIR__ . '/includes/class-ajax.php';
 
 register_activation_hook( __FILE__, array( 'SJB_WP_LEAFLET_MAP', 'on_activation' ) );
 register_deactivation_hook( __FILE__, array( 'SJB_WP_LEAFLET_MAP', 'on_deactivation' ) );
@@ -88,7 +90,11 @@ class SJB_WP_LEAFLET_MAP {
         add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_assets' ) );
         add_filter( 'plugin_action_links_' . plugin_basename( __FILE__ ), array( $this, 'plugin_settings_link' ) );
 
+        SJB_WP_LEAFLET_MAP_Ajax::register();
         SJB_WP_LEAFLET_MAP_Shortcodes::register();
+
+        // dbDelta en admin: añade columnas nuevas (p. ej. show_always).
+        add_action( 'admin_init', array( 'SJB_WP_LEAFLET_MAP_Collections', 'create_tables' ) );
     }
 
     /**
@@ -201,25 +207,54 @@ class SJB_WP_LEAFLET_MAP {
             '5.3.3',
             true
         );
+
+        wp_enqueue_script(
+            self::$slug . '-admin',
+            self::$path2assets . 'js/admin.js',
+            array( self::$slug . '-bootstrap' ),
+            self::$version,
+            true
+        );
+
+        wp_localize_script(
+            self::$slug . '-admin',
+            'sjbWpLeafletMapAdmin',
+            array(
+                'ajaxUrl' => admin_url( 'admin-ajax.php' ),
+                'nonce'   => wp_create_nonce( SJB_WP_LEAFLET_MAP_Ajax::NONCE_ACTION ),
+                'i18n'    => array(
+                    'okGeneric'         => __( 'Operación correcta.', 'sjb-wp-leaflet-map' ),
+                    'errorGeneric'      => __( 'Ha ocurrido un error.', 'sjb-wp-leaflet-map' ),
+                    'networkError'      => __( 'Error de red. Inténtalo de nuevo.', 'sjb-wp-leaflet-map' ),
+                    'close'             => __( 'Cerrar', 'sjb-wp-leaflet-map' ),
+                    'collectionNew'     => __( 'Nueva colección', 'sjb-wp-leaflet-map' ),
+                    'collectionEdit'    => __( 'Editar colección', 'sjb-wp-leaflet-map' ),
+                    'collectionCreate'  => __( 'Crear colección', 'sjb-wp-leaflet-map' ),
+                    'collectionSave'    => __( 'Guardar cambios', 'sjb-wp-leaflet-map' ),
+                    'markerSaved'       => __( 'Marcador guardado.', 'sjb-wp-leaflet-map' ),
+                    'markerDeleted'     => __( 'Marcador eliminado.', 'sjb-wp-leaflet-map' ),
+                    'markerInvalid'     => __( 'Latitud y longitud deben ser números válidos.', 'sjb-wp-leaflet-map' ),
+                    'markerConfirmDel'  => __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-map' ),
+                    'exportTodo'        => __( 'Exportar: pendiente de implementar.', 'sjb-wp-leaflet-map' ),
+                    'duplicateTodo'     => __( 'Duplicar: pendiente de implementar.', 'sjb-wp-leaflet-map' ),
+                    'markerActive'      => __( 'Activo (clic para desactivar)', 'sjb-wp-leaflet-map' ),
+                    'markerInactive'    => __( 'Inactivo (clic para activar)', 'sjb-wp-leaflet-map' ),
+                ),
+            )
+        );
     }
 
     /**
-     * Pantalla de administración (pestañas) y guardado del switch.
+     * Pantalla de administración (pestañas). La escritura va por AJAX.
      */
     public function render_admin_page(): void {
         if ( ! current_user_can( 'manage_options' ) ) {
             return;
         }
 
-        $updated = false;
-
-        if ( isset( $_POST['sjb_wp_leaflet_map_save'] ) ) {
-            check_admin_referer( 'sjb_wp_leaflet_map_save_settings' );
-
-            $options                       = self::get_options();
-            $options['delete_onuninstall'] = isset( $_POST['delete_onuninstall'] ) ? 1 : 0;
-            update_option( self::$noslug . '_options', $options );
-            $updated = true;
+        $active_tab = isset( $_GET['tab'] ) ? sanitize_key( (string) wp_unslash( $_GET['tab'] ) ) : 'configuracion';
+        if ( ! in_array( $active_tab, array( 'configuracion', 'marcadores', 'info' ), true ) ) {
+            $active_tab = 'configuracion';
         }
 
         $options = self::get_options();
@@ -228,7 +263,7 @@ class SJB_WP_LEAFLET_MAP {
     }
 
     /**
-     * Activación: opciones por defecto si aún no existen.
+     * Activación: opciones por defecto y tablas de colecciones/marcadores.
      */
     public static function on_activation(): void {
         if ( ! current_user_can( 'activate_plugins' ) ) {
@@ -260,6 +295,8 @@ class SJB_WP_LEAFLET_MAP {
                 add_option( $option_name, self::default_options() );
             }
         }
+
+        SJB_WP_LEAFLET_MAP_Collections::create_tables();
     }
 
     /**

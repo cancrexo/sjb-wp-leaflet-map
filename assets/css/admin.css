@@ -1,10 +1,15 @@
 /* Ajustes menores para Bootstrap 5.3 dentro de wp-admin. */
 .sjb-leaflet-admin {
-    max-width: 960px;
+    max-width: 1100px;
 }
 
 .sjb-leaflet-admin .nav-tabs {
     margin-top: 1rem;
+    margin-bottom: 0;
+}
+
+/* WP admin añade margin-bottom a li; anularlo en las pestañas. */
+.sjb-leaflet-admin .nav-tabs .nav-item {
     margin-bottom: 0;
 }
 
@@ -80,4 +85,248 @@
 .sjb-leaflet-admin .btn-primary:hover {
     background-color: #135e96;
     border-color: #135e96;
+}
+
+.sjb-leaflet-admin .sjb-ajax-form.is-sjb-busy {
+    opacity: 0.72;
+    pointer-events: none;
+}
+
+/* Modal Bootstrap por encima de la barra/admin de WP. */
+.sjb-leaflet-admin .modal {
+    z-index: 100050;
+}
+
+body.modal-open .modal-backdrop {
+    z-index: 100040;
+}
+
+/* Columna Acciones: ancho mínimo (solo iconos). */
+.sjb-leaflet-admin .sjb-col-actions {
+    width: 1%;
+    white-space: nowrap;
+    text-align: center;
+    padding-left: 0.5rem;
+    padding-right: 0.5rem;
+}
+
+/* Botones de acción solo icono (tablas admin). */
+.sjb-leaflet-admin .sjb-icon-actions {
+    white-space: nowrap;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn {
+    padding: 0.15rem 0.25rem;
+    line-height: 1;
+    text-decoration: none;
+    border: 0;
+    background: transparent;
+    box-shadow: none;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn .dashicons {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+    vertical-align: middle;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--edit {
+    color: #198754;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--edit:hover,
+.sjb-leaflet-admin .sjb-icon-btn--edit:focus {
+    color: #146c43;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--markers {
+    color: #2271b1;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--markers:hover,
+.sjb-leaflet-admin .sjb-icon-btn--markers:focus {
+    color: #135e96;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--export {
+    color: #3c434a;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--export:hover,
+.sjb-leaflet-admin .sjb-icon-btn--export:focus {
+    color: #1d2327;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--duplicate {
+    color: #ffc107;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--duplicate:hover,
+.sjb-leaflet-admin .sjb-icon-btn--duplicate:focus {
+    color: #d39e00;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--trash {
+    color: #b32d2e;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--trash:hover,
+.sjb-leaflet-admin .sjb-icon-btn--trash:focus {
+    color: #8a2424;
+}
+
+/* Separar borrar en el listado de colecciones. */
+.sjb-leaflet-admin .sjb-icon-actions > form:has(.sjb-icon-btn--trash) {
+    margin-left: 10px;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--active {
+    color: #00a32a;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--active:hover,
+.sjb-leaflet-admin .sjb-icon-btn--active:focus {
+    color: #008a20;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--inactive {
+    color: #b32d2e;
+}
+
+.sjb-leaflet-admin .sjb-icon-btn--inactive:hover,
+.sjb-leaflet-admin .sjb-icon-btn--inactive:focus {
+    color: #8a2424;
+}
+
+.sjb-leaflet-admin .sjb-col-status {
+    width: 1%;
+    white-space: nowrap;
+}
+
+.sjb-leaflet-admin .sjb-markers-add-wrap {
+    margin: 0.75rem 0 1rem;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.sjb-leaflet-admin .sjb-btn-add-marker {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 400;
+    font-size: 0.875rem;
+    padding: 0.35rem 0.85rem;
+    box-shadow: none;
+}
+
+.sjb-leaflet-admin .sjb-btn-add-marker .dashicons {
+    font-size: 16px;
+    width: 16px;
+    height: 16px;
+    line-height: 1;
+    position: relative;
+    top: 1px;
+}
+
+/* Fila de marcador inválida / incompleta (lat/lng). */
+.sjb-leaflet-admin .sjb-marker-row--invalid {
+    background-color: rgba(220, 53, 69, 0.12);
+}
+
+.sjb-leaflet-admin .sjb-marker-row--invalid > td {
+    border-color: rgba(220, 53, 69, 0.45) !important;
+    box-shadow: inset 0 0 0 1px rgba(220, 53, 69, 0.28);
+}
+
+.sjb-leaflet-admin .sjb-marker-row--invalid .sjb-marker-lat,
+.sjb-leaflet-admin .sjb-marker-row--invalid .sjb-marker-lng {
+    border-color: #dc3545;
+    background-color: #fff5f5;
+}
+
+.sjb-leaflet-admin .sjb-marker-row.is-sjb-busy {
+    opacity: 0.65;
+    pointer-events: none;
+}
+
+.sjb-leaflet-admin #sjb-markers-table .form-control,
+.sjb-leaflet-admin #sjb-markers-table .form-select {
+    min-width: 0;
+}
+
+.sjb-leaflet-admin #sjb-markers-table .sjb-marker-text {
+    min-width: 12rem;
+}
+
+/* Toasts admin (esquina superior derecha). */
+.sjb-leaflet-toast-root {
+    position: fixed;
+    top: 48px;
+    right: 20px;
+    z-index: 100000;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+    max-width: min(360px, calc(100vw - 40px));
+    pointer-events: none;
+}
+
+.sjb-leaflet-toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.75rem;
+    padding: 0.85rem 1rem;
+    border-radius: 10px;
+    color: #fff;
+    box-shadow: 0 10px 28px rgba(0, 0, 0, 0.18);
+    opacity: 0;
+    transform: translateY(-10px) translateX(8px);
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    pointer-events: auto;
+}
+
+.sjb-leaflet-toast.is-visible {
+    opacity: 1;
+    transform: translateY(0) translateX(0);
+}
+
+.sjb-leaflet-toast.is-leaving {
+    opacity: 0;
+    transform: translateY(-6px) translateX(12px);
+}
+
+.sjb-leaflet-toast--success {
+    background: linear-gradient(135deg, #1a7f4b 0%, #146c43 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sjb-leaflet-toast--error {
+    background: linear-gradient(135deg, #c0392b 0%, #a1271b 100%);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.sjb-leaflet-toast__text {
+    flex: 1;
+    font-size: 0.95rem;
+    line-height: 1.4;
+    font-weight: 500;
+}
+
+.sjb-leaflet-toast__close {
+    appearance: none;
+    border: 0;
+    background: transparent;
+    color: inherit;
+    font-size: 1.35rem;
+    line-height: 1;
+    padding: 0;
+    margin: -0.15rem 0 0;
+    cursor: pointer;
+    opacity: 0.85;
+}
+
+.sjb-leaflet-toast__close:hover {
+    opacity: 1;
 }

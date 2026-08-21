@@ -4,48 +4,50 @@
  *
  * @package sjb-wp-leaflet-map
  *
- * @var bool                $updated
  * @var array<string,mixed> $options
+ * @var string              $active_tab
  */
 
 defined( 'ABSPATH' ) || exit;
+
+$is_config     = ( 'configuracion' === $active_tab );
+$is_marcadores = ( 'marcadores' === $active_tab );
+$is_info       = ( 'info' === $active_tab );
 ?>
 <div class="wrap sjb-leaflet-admin">
     <h1><?php echo esc_html( SJB_WP_LEAFLET_MAP::$title ); ?></h1>
 
-    <?php if ( $updated ) : ?>
-        <div class="notice notice-success is-dismissible">
-            <p><?php esc_html_e( 'Ajustes guardados.', 'sjb-wp-leaflet-map' ); ?></p>
-        </div>
-    <?php endif; ?>
-
     <ul class="nav nav-tabs" id="sjbLeafletTabs" role="tablist">
         <li class="nav-item" role="presentation">
-            <button class="nav-link active" id="tab-configuracion-btn" data-bs-toggle="tab" data-bs-target="#tab-configuracion" type="button" role="tab" aria-controls="tab-configuracion" aria-selected="true">
+            <a class="nav-link<?php echo $is_config ? ' active' : ''; ?>" id="tab-configuracion-btn" href="<?php echo esc_url( admin_url( 'options-general.php?page=' . SJB_WP_LEAFLET_MAP::$slug . '&tab=configuracion' ) ); ?>" role="tab" aria-controls="tab-configuracion" aria-selected="<?php echo $is_config ? 'true' : 'false'; ?>">
                 <?php esc_html_e( 'Configuración', 'sjb-wp-leaflet-map' ); ?>
-            </button>
+            </a>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-marcadores-btn" data-bs-toggle="tab" data-bs-target="#tab-marcadores" type="button" role="tab" aria-controls="tab-marcadores" aria-selected="false">
+            <a class="nav-link<?php echo $is_marcadores ? ' active' : ''; ?>" id="tab-marcadores-btn" href="<?php echo esc_url( admin_url( 'options-general.php?page=' . SJB_WP_LEAFLET_MAP::$slug . '&tab=marcadores' ) ); ?>" role="tab" aria-controls="tab-marcadores" aria-selected="<?php echo $is_marcadores ? 'true' : 'false'; ?>">
                 <?php esc_html_e( 'Marcadores', 'sjb-wp-leaflet-map' ); ?>
-            </button>
+            </a>
         </li>
         <li class="nav-item" role="presentation">
-            <button class="nav-link" id="tab-info-btn" data-bs-toggle="tab" data-bs-target="#tab-info" type="button" role="tab" aria-controls="tab-info" aria-selected="false">
+            <a class="nav-link<?php echo $is_info ? ' active' : ''; ?>" id="tab-info-btn" href="<?php echo esc_url( admin_url( 'options-general.php?page=' . SJB_WP_LEAFLET_MAP::$slug . '&tab=info' ) ); ?>" role="tab" aria-controls="tab-info" aria-selected="<?php echo $is_info ? 'true' : 'false'; ?>">
                 <?php esc_html_e( 'Info', 'sjb-wp-leaflet-map' ); ?>
-            </button>
+            </a>
         </li>
     </ul>
 
     <div class="tab-content sjb-leaflet-tab-content" id="sjbLeafletTabContent">
-        <div class="tab-pane fade show active" id="tab-configuracion" role="tabpanel" aria-labelledby="tab-configuracion-btn" tabindex="0">
-            <?php require SJB_WP_LEAFLET_MAP::$plugindir . 'templates/admin/tabs/tab-configuracion.php'; ?>
-        </div>
-        <div class="tab-pane fade" id="tab-marcadores" role="tabpanel" aria-labelledby="tab-marcadores-btn" tabindex="0">
-            <?php require SJB_WP_LEAFLET_MAP::$plugindir . 'templates/admin/tabs/tab-marcadores.php'; ?>
-        </div>
-        <div class="tab-pane fade" id="tab-info" role="tabpanel" aria-labelledby="tab-info-btn" tabindex="0">
-            <?php require SJB_WP_LEAFLET_MAP::$plugindir . 'templates/admin/tabs/tab-info.php'; ?>
-        </div>
+        <?php if ( $is_config ) : ?>
+            <div class="tab-pane fade show active" id="tab-configuracion" role="tabpanel" aria-labelledby="tab-configuracion-btn" tabindex="0">
+                <?php require SJB_WP_LEAFLET_MAP::$plugindir . 'templates/admin/tabs/tab-configuracion.php'; ?>
+            </div>
+        <?php elseif ( $is_marcadores ) : ?>
+            <div class="tab-pane fade show active" id="tab-marcadores" role="tabpanel" aria-labelledby="tab-marcadores-btn" tabindex="0">
+                <?php require SJB_WP_LEAFLET_MAP::$plugindir . 'templates/admin/tabs/tab-marcadores.php'; ?>
+            </div>
+        <?php else : ?>
+            <div class="tab-pane fade show active" id="tab-info" role="tabpanel" aria-labelledby="tab-info-btn" tabindex="0">
+                <?php require SJB_WP_LEAFLET_MAP::$plugindir . 'templates/admin/tabs/tab-info.php'; ?>
+            </div>
+        <?php endif; ?>
     </div>
 </div>

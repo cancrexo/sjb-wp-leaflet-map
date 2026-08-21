@@ -1,9 +1,45 @@
 /**
  * Inicializa los mapas Leaflet renderizados por el shortcode.
  * Compatible con footer y con carga async/defer.
+ *
+ * Modos de texto (data-marker-mode): hover | click | both | always
+ * «always» usa tooltip permanente de Leaflet ({ permanent: true }).
  */
 (() => {
     'use strict';
+
+    /**
+     * Asocia texto al marcador según el modo de visualización.
+     *
+     * @param {L.Marker} marker Marcador Leaflet.
+     * @param {string} text HTML/texto.
+     * @param {string} mode Modo.
+     */
+    const bindMarkerText = (marker, text, mode) => {
+        const content = (text || '').trim();
+        if (content === '') {
+            return;
+        }
+
+        const display = mode || 'both';
+
+        if (display === 'always') {
+            marker.bindTooltip(content, {
+                permanent: true,
+                direction: 'top',
+                opacity: 0.95,
+            });
+            return;
+        }
+
+        if (display === 'hover' || display === 'both') {
+            marker.bindTooltip(content);
+        }
+
+        if (display === 'click' || display === 'both') {
+            marker.bindPopup(content);
+        }
+    };
 
     const initMaps = () => {
         if (typeof L === 'undefined') {
@@ -34,12 +70,7 @@
             }
 
             const marker = L.marker([markerLat, markerLng]).addTo(map);
-            const text = (el.dataset.markerText || '').trim();
-
-            if (text !== '') {
-                marker.bindPopup(text);
-                marker.bindTooltip(text);
-            }
+            bindMarkerText(marker, el.dataset.markerText || '', el.dataset.markerMode || 'both');
         });
     };
 

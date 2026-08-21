@@ -9,9 +9,7 @@
 
 defined( 'ABSPATH' ) || exit;
 ?>
-<form method="post" action="">
-    <?php wp_nonce_field( 'sjb_wp_leaflet_map_save_settings' ); ?>
-
+<form method="post" action="" class="sjb-ajax-form" data-sjb-action="save_settings">
     <p class="text-muted">
         <?php esc_html_e( 'Ajustes generales del plugin. Más opciones se añadirán en próximas versiones.', 'sjb-wp-leaflet-map' ); ?>
     </p>
@@ -35,7 +33,7 @@ defined( 'ABSPATH' ) || exit;
         <?php esc_html_e( 'Si está activo, al desinstalar se eliminarán las opciones y datos del plugin. Si está desactivado, se conservarán.', 'sjb-wp-leaflet-map' ); ?>
     </p>
 
-    <button type="submit" name="sjb_wp_leaflet_map_save" value="1" class="btn btn-primary">
+    <button type="submit" class="btn btn-primary">
         <?php esc_html_e( 'Guardar cambios', 'sjb-wp-leaflet-map' ); ?>
     </button>
 </form>
