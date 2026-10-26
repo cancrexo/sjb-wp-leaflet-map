@@ -65,11 +65,16 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
 
         $category = __( 'SJB Shortcodes', 'sjb-wp-leaflet-map' );
 
+        // URL absoluta: WPBakery solo pinta el icono en el selector y en el lienzo si es una URL válida.
+        $icon_map        = SJB_WP_LEAFLET_MAP::$path2assets . 'img/vc-icon-map.png';
+        $icon_collection = SJB_WP_LEAFLET_MAP::$path2assets . 'img/vc-icon-collection.png';
+
         $shortcodes = array(
             array(
                 'base'        => 'sjb_leaflet_map',
                 'name'        => __( 'SJB Leaflet Map', 'sjb-wp-leaflet-map' ),
                 'description' => __( 'Mapa interactivo Leaflet (OpenStreetMap).', 'sjb-wp-leaflet-map' ),
+                'icon'        => $icon_map,
                 'params'      => array(
                     array(
                         'type'             => 'textfield',
@@ -140,6 +145,7 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
                 'base'        => 'sjb_leaflet_collection',
                 'name'        => __( 'SJB Leaflet Collection', 'sjb-wp-leaflet-map' ),
                 'description' => __( 'Mapa Leaflet con marcadores de una colección.', 'sjb-wp-leaflet-map' ),
+                'icon'        => $icon_collection,
                 'params'      => array(
                     array(
                         'type'        => 'dropdown',

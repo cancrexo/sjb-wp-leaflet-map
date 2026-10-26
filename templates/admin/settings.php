@@ -1,6 +1,6 @@
 <?php
 /**
- * Pantalla de ajustes del plugin (tres pestañas).
+ * Pantalla de ajustes del plugin (cuatro pestañas).
  *
  * @package sjb-wp-leaflet-map
  *
@@ -10,6 +10,7 @@
 
 defined( 'ABSPATH' ) || exit;
 
+$is_empezar    = ( 'empezar' === $active_tab );
 $is_config     = ( 'configuracion' === $active_tab );
 $is_marcadores = ( 'marcadores' === $active_tab );
 $is_info       = ( 'info' === $active_tab );
@@ -18,6 +19,11 @@ $is_info       = ( 'info' === $active_tab );
     <h1><?php echo esc_html( SJB_WP_LEAFLET_MAP::$title ); ?></h1>
 
     <ul class="nav nav-tabs" id="sjbLeafletTabs" role="tablist">
+        <li class="nav-item" role="presentation">
+            <a class="nav-link<?php echo $is_empezar ? ' active' : ''; ?>" id="tab-empezar-btn" href="<?php echo esc_url( admin_url( 'options-general.php?page=' . SJB_WP_LEAFLET_MAP::$slug . '&tab=empezar' ) ); ?>" role="tab" aria-controls="tab-empezar" aria-selected="<?php echo $is_empezar ? 'true' : 'false'; ?>">
+                <?php esc_html_e( 'Antes de empezar', 'sjb-wp-leaflet-map' ); ?>
+            </a>
+        </li>
         <li class="nav-item" role="presentation">
             <a class="nav-link<?php echo $is_config ? ' active' : ''; ?>" id="tab-configuracion-btn" href="<?php echo esc_url( admin_url( 'options-general.php?page=' . SJB_WP_LEAFLET_MAP::$slug . '&tab=configuracion' ) ); ?>" role="tab" aria-controls="tab-configuracion" aria-selected="<?php echo $is_config ? 'true' : 'false'; ?>">
                 <?php esc_html_e( 'Configuración', 'sjb-wp-leaflet-map' ); ?>
@@ -36,7 +42,11 @@ $is_info       = ( 'info' === $active_tab );
     </ul>
 
     <div class="tab-content sjb-leaflet-tab-content" id="sjbLeafletTabContent">
-        <?php if ( $is_config ) : ?>
+        <?php if ( $is_empezar ) : ?>
+            <div class="tab-pane fade show active" id="tab-empezar" role="tabpanel" aria-labelledby="tab-empezar-btn" tabindex="0">
+                <?php require SJB_WP_LEAFLET_MAP::$plugindir . 'templates/admin/tabs/tab-empezar.php'; ?>
+            </div>
+        <?php elseif ( $is_config ) : ?>
             <div class="tab-pane fade show active" id="tab-configuracion" role="tabpanel" aria-labelledby="tab-configuracion-btn" tabindex="0">
                 <?php require SJB_WP_LEAFLET_MAP::$plugindir . 'templates/admin/tabs/tab-configuracion.php'; ?>
             </div>

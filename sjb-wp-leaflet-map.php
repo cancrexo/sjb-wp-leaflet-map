@@ -655,9 +655,9 @@ class SJB_WP_LEAFLET_MAP {
             return;
         }
 
-        $active_tab = isset( $_GET['tab'] ) ? sanitize_key( (string) wp_unslash( $_GET['tab'] ) ) : 'configuracion';
-        if ( ! in_array( $active_tab, array( 'configuracion', 'marcadores', 'info' ), true ) ) {
-            $active_tab = 'configuracion';
+        $active_tab = isset( $_GET['tab'] ) ? sanitize_key( (string) wp_unslash( $_GET['tab'] ) ) : 'empezar';
+        if ( ! in_array( $active_tab, array( 'empezar', 'configuracion', 'marcadores', 'info' ), true ) ) {
+            $active_tab = 'empezar';
         }
 
         $options = self::get_options();

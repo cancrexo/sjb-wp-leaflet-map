@@ -86,7 +86,10 @@ $confirm_delete_marker     = __( '¿Eliminar este marcador?', 'sjb-wp-leaflet-ma
     </div>
 
     <p class="text-muted">
-        <?php esc_html_e( 'Crea colecciones reutilizables. Más adelante podrás asociarlas al shortcode del mapa.', 'sjb-wp-leaflet-map' ); ?>
+        <?php esc_html_e( 'Estas colecciones se usan con el shortcode [sjb_leaflet_collection]. En él se fija el centro del mapa y se indica la colección; el mapa muestra sus marcadores activos. Si WPBakery está activo, el mismo shortcode se inserta con el elemento SJB Leaflet Collection.', 'sjb-wp-leaflet-map' ); ?>
+    </p>
+    <p class="text-muted">
+        <?php esc_html_e( 'El shortcode [sjb_leaflet_map] es un mapa sencillo: hay que escribir a mano las coordenadas del centro y, si quieres un pin, las del marcador. No lee estas colecciones.', 'sjb-wp-leaflet-map' ); ?>
     </p>
 
     <?php
