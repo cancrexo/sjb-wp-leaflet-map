@@ -1,6 +1,6 @@
 <?php
 /**
- * Shortcodes públicos, assets Leaflet y mapeo WPBakery.
+ * Shortcodes públicos, assets Leaflet, bloques Gutenberg y mapeo WPBakery.
  *
  * @package sjb-wp-leaflet-map
  * @author  Daniel "Cancrexo" Prol
@@ -10,7 +10,7 @@
 defined( 'ABSPATH' ) || exit;
 
 /**
- * Registro de shortcodes y su utilería (frontend + WPBakery).
+ * Registro de shortcodes y su utilería (frontend, Gutenberg y WPBakery).
  */
 class SJB_WP_LEAFLET_MAP_Shortcodes {
 
@@ -32,18 +32,126 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
     public static $add_script = 0;
 
     /**
-     * Hooks de shortcodes, assets y WPBakery.
+     * Hooks de shortcodes, bloques, assets y WPBakery.
      */
     public static function register(): void {
         add_action( 'wp_enqueue_scripts', array( __CLASS__, 'register_public_scripts' ) );
         add_action( 'wp_footer', array( __CLASS__, 'print_public_scripts' ) );
         add_shortcode( 'sjb_leaflet_map', array( __CLASS__, 'shortcode_leaflet_map' ) );
         add_shortcode( 'sjb_leaflet_collection', array( __CLASS__, 'shortcode_leaflet_collection' ) );
+        add_action( 'init', array( __CLASS__, 'register_blocks' ) );
 
         // Shortcodes en WPBakery (solo si el plugin está activo).
         if ( function_exists( 'vc_map' ) ) {
             add_action( 'vc_before_init', array( __CLASS__, 'map_vc_shortcodes' ) );
         }
+    }
+
+    /**
+     * Bloques dinámicos Gutenberg. El HTML lo siguen generando los shortcodes.
+     */
+    public static function register_blocks(): void {
+        $handle = SJB_WP_LEAFLET_MAP::$slug . '-blocks';
+        $style  = $handle . '-editor';
+
+        wp_register_script(
+            $handle,
+            SJB_WP_LEAFLET_MAP::$path2assets . 'js/blocks.js',
+            array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-i18n' ),
+            SJB_WP_LEAFLET_MAP::$version,
+            true
+        );
+
+        wp_register_style(
+            $style,
+            SJB_WP_LEAFLET_MAP::$path2assets . 'css/blocks-editor.css',
+            array(),
+            SJB_WP_LEAFLET_MAP::$version
+        );
+
+        wp_set_script_translations(
+            $handle,
+            SJB_WP_LEAFLET_MAP::$slug,
+            SJB_WP_LEAFLET_MAP::$plugindir . 'languages'
+        );
+
+        // Antes de que WordPress encole el script del bloque (prioridad 10).
+        add_action(
+            'enqueue_block_editor_assets',
+            static function () use ( $handle ): void {
+                $choices = array(
+                    array(
+                        'label' => __( '— Seleccionar —', 'sjb-wp-leaflet-map' ),
+                        'value' => '',
+                    ),
+                );
+
+                if ( class_exists( 'SJB_WP_LEAFLET_MAP_Collections' ) ) {
+                    foreach ( SJB_WP_LEAFLET_MAP_Collections::get_collections() as $collection ) {
+                        $choices[] = array(
+                            'label' => $collection->name . ' (' . $collection->slug . ')',
+                            'value' => $collection->slug,
+                        );
+                    }
+                }
+
+                wp_localize_script(
+                    $handle,
+                    'sjbLeafletMapBlocks',
+                    array(
+                        'collections' => $choices,
+                    )
+                );
+            },
+            9
+        );
+
+        add_filter(
+            'block_categories_all',
+            static function ( array $categories ): array {
+                foreach ( $categories as $category ) {
+                    if ( isset( $category['slug'] ) && 'sjb-shortcodes' === $category['slug'] ) {
+                        return $categories;
+                    }
+                }
+
+                array_unshift(
+                    $categories,
+                    array(
+                        'slug'  => 'sjb-shortcodes',
+                        'title' => __( 'SJB Shortcodes', 'sjb-wp-leaflet-map' ),
+                        'icon'  => 'location-alt',
+                    )
+                );
+
+                return $categories;
+            }
+        );
+
+        $editor = array(
+            'editor_script' => $handle,
+            'editor_style'  => $style,
+        );
+
+        register_block_type(
+            SJB_WP_LEAFLET_MAP::$plugindir . 'blocks/map',
+            array_merge(
+                $editor,
+                array(
+                    'render_callback' => array( __CLASS__, 'shortcode_leaflet_map' ),
+                )
+            )
+        );
+
+        register_block_type(
+            SJB_WP_LEAFLET_MAP::$plugindir . 'blocks/collection',
+            array_merge(
+                $editor,
+                array(
+                    'render_callback' => array( __CLASS__, 'shortcode_leaflet_collection' ),
+                )
+            )
+        );
     }
 
     /**

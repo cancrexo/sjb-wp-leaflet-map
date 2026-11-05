@@ -39,5 +39,5 @@ defined( 'ABSPATH' ) || exit;
 </div>
 
 <p class="text-muted mt-3">
-    <?php esc_html_e( 'Si WPBakery está activo, los mismos shortcodes aparecen en SJB Shortcodes como SJB Leaflet Map y SJB Leaflet Collection.', 'sjb-wp-leaflet-map' ); ?>
+    <?php esc_html_e( 'En el editor de bloques están en SJB Shortcodes (SJB Leaflet Map y SJB Leaflet Collection). Si WPBakery está activo, también aparecen ahí con los mismos nombres.', 'sjb-wp-leaflet-map' ); ?>
 </p>

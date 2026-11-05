@@ -1,0 +1,33 @@
+/* Ficha del bloque en el editor. El mapa Leaflet solo se pinta en la página. */
+.sjb-leaflet-block-preview {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 16px 18px;
+    border: 1px dashed #c3c4c7;
+    background: #f6f7f7;
+}
+
+.sjb-leaflet-block-preview__title {
+    margin: 0 0 8px;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 1.4;
+}
+
+.sjb-leaflet-block-preview__line {
+    margin: 0;
+    color: #1d2327;
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+.sjb-leaflet-block-preview__line + .sjb-leaflet-block-preview__line {
+    margin-top: 2px;
+}
+
+.sjb-leaflet-block-preview__hint {
+    margin: 8px 0 0;
+    color: #50575e;
+    font-size: 12px;
+    line-height: 1.4;
+}

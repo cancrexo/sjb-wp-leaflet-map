@@ -1,0 +1,53 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "sjb-wp-leaflet-map/collection",
+    "title": "SJB Leaflet Collection",
+    "category": "sjb-shortcodes",
+    "icon": "location",
+    "description": "Mapa Leaflet con marcadores de una colección.",
+    "keywords": ["mapa", "leaflet", "colección", "marcadores"],
+    "textdomain": "sjb-wp-leaflet-map",
+    "attributes": {
+        "collection": {
+            "type": "string",
+            "default": ""
+        },
+        "lat": {
+            "type": "string",
+            "default": "42.4034506"
+        },
+        "lng": {
+            "type": "string",
+            "default": "-8.8091448"
+        },
+        "zoom": {
+            "type": "string",
+            "default": "13"
+        },
+        "width": {
+            "type": "string",
+            "default": "100%"
+        },
+        "height": {
+            "type": "string",
+            "default": "400px"
+        },
+        "id": {
+            "type": "string",
+            "default": "Leaflet Collection"
+        }
+    },
+    "example": {
+        "attributes": {
+            "lat": "42.4034506",
+            "lng": "-8.8091448",
+            "zoom": "13"
+        }
+    },
+    "supports": {
+        "html": false,
+        "multiple": true,
+        "reusable": true
+    }
+}

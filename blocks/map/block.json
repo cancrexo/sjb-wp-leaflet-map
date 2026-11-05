@@ -1,0 +1,61 @@
+{
+    "$schema": "https://schemas.wp.org/trunk/block.json",
+    "apiVersion": 3,
+    "name": "sjb-wp-leaflet-map/map",
+    "title": "SJB Leaflet Map",
+    "category": "sjb-shortcodes",
+    "icon": "location-alt",
+    "description": "Mapa interactivo Leaflet (OpenStreetMap).",
+    "keywords": ["mapa", "leaflet", "openstreetmap", "marcador"],
+    "textdomain": "sjb-wp-leaflet-map",
+    "attributes": {
+        "lat": {
+            "type": "string",
+            "default": "42.4034506"
+        },
+        "lng": {
+            "type": "string",
+            "default": "-8.8091448"
+        },
+        "zoom": {
+            "type": "string",
+            "default": "13"
+        },
+        "width": {
+            "type": "string",
+            "default": "100%"
+        },
+        "height": {
+            "type": "string",
+            "default": "400px"
+        },
+        "id": {
+            "type": "string",
+            "default": "Leaflet Map"
+        },
+        "marker_lat": {
+            "type": "string",
+            "default": ""
+        },
+        "marker_lng": {
+            "type": "string",
+            "default": ""
+        },
+        "marker_text": {
+            "type": "string",
+            "default": ""
+        }
+    },
+    "example": {
+        "attributes": {
+            "lat": "42.4034506",
+            "lng": "-8.8091448",
+            "zoom": "13"
+        }
+    },
+    "supports": {
+        "html": false,
+        "multiple": true,
+        "reusable": true
+    }
+}
