@@ -2,6 +2,10 @@
 
 Los cambios notables de SJB WP Leaflet Map. La versión del plugin es la de la cabecera (`1.0.1`).
 
+## Sin publicar
+
+- `zoom_needs_ctrlkey` pasa a `1` por defecto en los dos shortcodes y en el bloque. La rueda solo hace zoom con Ctrl (o Comando) salvo que se ponga a `0`. En WPBakery el ajuste deja de ser una casilla y pasa a un desplegable: «Solo con Ctrl (o Comando)» o «Sin tecla». La versión del plugin sigue en 1.0.1.
+
 ## 1.0.1 — 2026-11-06
 
 - Atributo `zoom_needs_ctrlkey` en los dos shortcodes: la rueda solo hace zoom con Ctrl (o Comando). El mismo interruptor está en el bloque y en WPBakery. Sin la tecla, la página sigue desplazándose y el mapa muestra un aviso.

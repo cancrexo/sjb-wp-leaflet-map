@@ -23,7 +23,7 @@
         },
         "zoom_needs_ctrlkey": {
             "type": "boolean",
-            "default": false
+            "default": true
         },
         "width": {
             "type": "string",

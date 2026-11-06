@@ -116,7 +116,7 @@
         }),
         el(ToggleControl, {
             label: __('Zoom con la rueda solo con Ctrl', 'sjb-wp-leaflet-map'),
-            help: __('Sin la tecla, la rueda desplaza la página. En Mac también vale Comando. Los botones + y − siguen igual.', 'sjb-wp-leaflet-map'),
+            help: __('Activo por defecto. Sin la tecla, la rueda desplaza la página. En Mac también vale Comando. Los botones + y − siguen igual.', 'sjb-wp-leaflet-map'),
             checked: !!attributes.zoom_needs_ctrlkey,
             onChange: (value) => setAttributes({ zoom_needs_ctrlkey: !!value }),
         })

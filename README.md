@@ -66,7 +66,7 @@ Inserta el mapa en una página o entrada:
 | `lat` | `42.4034506` | Latitud del centro |
 | `lng` | `-8.8091448` | Longitud del centro |
 | `zoom` | `13` | Nivel de zoom (0–19, límites Leaflet/OSM) |
-| `zoom_needs_ctrlkey` | *(apagado)* | `1` para que la rueda solo haga zoom con Ctrl (o Comando). Sin la tecla, la página se desplaza y el mapa avisa. |
+| `zoom_needs_ctrlkey` | `1` | `1` (o ausente): la rueda solo hace zoom con Ctrl (o Comando) y el mapa avisa. `0`: la rueda hace zoom sola. |
 | `width` | `100%` | Ancho del contenedor (número = px) |
 | `height` | `400px` | Alto del contenedor (número = px) |
 | `id` | `Leaflet Map` | Identificador del contenedor (se sanitiza a clase HTML) |
@@ -77,7 +77,13 @@ Inserta el mapa en una página o entrada:
 ### Ejemplo
 
 ```
-[sjb_leaflet_map lat="42.8805" lng="-8.5457" zoom="14" height="450" id="mapa-santiago" zoom_needs_ctrlkey="1"]
+[sjb_leaflet_map lat="42.8805" lng="-8.5457" zoom="14" height="450" id="mapa-santiago"]
+```
+
+La rueda pide Ctrl. Para que haga zoom sola:
+
+```
+[sjb_leaflet_map lat="42.8805" lng="-8.5457" zoom="14" zoom_needs_ctrlkey="0"]
 ```
 
 Los assets de Leaflet solo se cargan en páginas donde aparece el shortcode.
@@ -100,7 +106,7 @@ Mapa centrado en lat/lng/zoom con los marcadores **activos** de una colección (
 | `lat` | `42.4034506` | Latitud del centro |
 | `lng` | `-8.8091448` | Longitud del centro |
 | `zoom` | `13` | Nivel de zoom (0–19, límites Leaflet/OSM) |
-| `zoom_needs_ctrlkey` | *(apagado)* | `1` para que la rueda solo haga zoom con Ctrl (o Comando). Sin la tecla, la página se desplaza y el mapa avisa. |
+| `zoom_needs_ctrlkey` | `1` | `1` (o ausente): la rueda solo hace zoom con Ctrl (o Comando) y el mapa avisa. `0`: la rueda hace zoom sola. |
 | `width` | `100%` | Ancho del contenedor |
 | `height` | `400px` | Alto del contenedor |
 | `id` | `Leaflet Collection` | Identificador del contenedor |
@@ -113,8 +119,8 @@ Cada marcador respeta su modo de texto (`hover`, `click`, `both`, `always`). Los
 
 Si WPBakery está activo, en **SJB Shortcodes** aparecen:
 
-- **SJB Leaflet Map** — mapa simple (lat, lng, zoom, rueda con Ctrl, width, height, id, marcador opcional).
-- **SJB Leaflet Collection** — mapa con desplegable de colecciones, el mismo centro y tamaño, y la misma opción de rueda con Ctrl.
+- **SJB Leaflet Map** — mapa simple (lat, lng, zoom, width, height, id, marcador opcional). El zoom con la rueda es un desplegable: por defecto «Solo con Ctrl (o Comando)»; «Sin tecla» equivale a `zoom_needs_ctrlkey="0"`.
+- **SJB Leaflet Collection** — mapa con desplegable de colecciones, el mismo centro y tamaño, y el mismo ajuste de rueda.
 
 ### Regla importante (mapeo VC)
 
@@ -124,7 +130,7 @@ WPBakery exige que el shortcode **acepte al menos un parámetro** y que ese par�
 
 ## Editor de bloques
 
-En **SJB Shortcodes** están **SJB Leaflet Map** y **SJB Leaflet Collection**, con los mismos campos que los shortcodes. En el editor se ve una ficha (centro, zoom, tamaño y, si aplica, marcador o colección). El mapa se pinta al ver la página.
+En **SJB Shortcodes** están **SJB Leaflet Map** y **SJB Leaflet Collection**, con los mismos campos que los shortcodes. El interruptor de la rueda nace activado: hace falta Ctrl. En el editor se ve una ficha (centro, zoom, tamaño y, si aplica, marcador o colección). El mapa se pinta al ver la página.
 
 ---
 

@@ -178,13 +178,15 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
         $icon_collection = SJB_WP_LEAFLET_MAP::$path2assets . 'img/vc-icon-collection.png';
 
         $zoom_ctrl_param = array(
-            'type'        => 'checkbox',
+            'type'        => 'dropdown',
             'heading'     => __( 'Zoom con la rueda', 'sjb-wp-leaflet-map' ),
             'param_name'  => 'zoom_needs_ctrlkey',
             'value'       => array(
-                __( 'Solo con Ctrl (o Comando) pulsado.', 'sjb-wp-leaflet-map' ) => '1',
+                __( 'Solo con Ctrl (o Comando)', 'sjb-wp-leaflet-map' ) => '1',
+                __( 'Sin tecla', 'sjb-wp-leaflet-map' ) => '0',
             ),
-            'description' => __( 'Si está marcado, la rueda desplaza la página salvo que Ctrl esté pulsado. En Mac también vale Comando. Los botones + y − del mapa siguen igual.', 'sjb-wp-leaflet-map' ),
+            'std'         => '1',
+            'description' => __( 'Por defecto la rueda desplaza la página salvo que Ctrl esté pulsado. En Mac también vale Comando. «Sin tecla» hace zoom con la rueda sola. Los botones + y − siguen igual.', 'sjb-wp-leaflet-map' ),
         );
 
         $shortcodes = array(
@@ -415,24 +417,24 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
     /**
      * Atributos data-* del zoom con Ctrl, o cadena vacía si está apagado.
      *
-     * Acepta el shortcode («1», «true», «yes», «on»), el checkbox de WPBakery
-     * y el booleano del bloque de Gutenberg.
+     * Por defecto está activo. Solo se apaga con un no explícito: 0, false,
+     * «false», «no» u «off» (shortcode, desplegable de WPBakery o bloque).
      *
      * @param mixed $value Valor recibido.
      */
     private static function zoom_ctrl_data_attr( $value ): string {
-        $on = false;
+        $off = false;
 
         if ( is_bool( $value ) ) {
-            $on = $value;
+            $off = ! $value;
         } elseif ( is_numeric( $value ) ) {
-            $on = 1 === (int) $value;
+            $off = 0 === (int) $value;
         } else {
             $raw = strtolower( trim( (string) $value ) );
-            $on  = in_array( $raw, array( '1', 'true', 'yes', 'on' ), true );
+            $off = in_array( $raw, array( '0', 'false', 'no', 'off' ), true );
         }
 
-        if ( ! $on ) {
+        if ( $off ) {
             return '';
         }
 
@@ -523,7 +525,7 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
                 'lat'                => '42.4034506',
                 'lng'                => '-8.8091448',
                 'zoom'               => '13',
-                'zoom_needs_ctrlkey' => '',
+                'zoom_needs_ctrlkey' => '1',
                 'width'              => '100%',
                 'height'             => '400px',
                 'id'                 => 'Leaflet Map',
@@ -584,7 +586,7 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
                 'lat'                => '42.4034506',
                 'lng'                => '-8.8091448',
                 'zoom'               => '13',
-                'zoom_needs_ctrlkey' => '',
+                'zoom_needs_ctrlkey' => '1',
                 'width'              => '100%',
                 'height'             => '400px',
                 'id'                 => 'Leaflet Collection',
