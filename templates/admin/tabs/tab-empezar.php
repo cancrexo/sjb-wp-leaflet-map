@@ -39,5 +39,8 @@ defined( 'ABSPATH' ) || exit;
 </div>
 
 <p class="text-muted mt-3">
+    <?php esc_html_e( 'En los dos, zoom_needs_ctrlkey="1" hace que la rueda solo haga zoom con Ctrl pulsado (en Mac, también Comando). Sin esa tecla la página se desplaza y el mapa avisa. El mismo interruptor está en el bloque y en WPBakery.', 'sjb-wp-leaflet-map' ); ?>
+</p>
+<p class="text-muted">
     <?php esc_html_e( 'En el editor de bloques están en SJB Shortcodes (SJB Leaflet Map y SJB Leaflet Collection). Si WPBakery está activo, también aparecen ahí con los mismos nombres.', 'sjb-wp-leaflet-map' ); ?>
 </p>

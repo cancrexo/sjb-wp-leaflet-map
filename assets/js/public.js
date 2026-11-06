@@ -119,6 +119,66 @@
         });
     };
 
+    /**
+     * La rueda solo hace zoom con Ctrl o Comando. Sin la tecla, la página sigue desplazándose.
+     * El listener va en captura para cortar el de Leaflet antes de que consuma el evento.
+     *
+     * @param {L.Map} map Mapa.
+     * @param {string} hintText Aviso mientras la rueda no tiene la tecla.
+     */
+    const bindCtrlWheelZoom = (map, hintText) => {
+        const container = map.getContainer();
+        let hintEl = null;
+        let hideTimer = 0;
+
+        const hideHint = () => {
+            if (hintEl) {
+                hintEl.classList.remove('is-visible');
+            }
+        };
+
+        const showHint = () => {
+            if (hintText === '') {
+                return;
+            }
+
+            if (!hintEl) {
+                hintEl = document.createElement('p');
+                hintEl.className = 'sjb-leaflet-zoom-hint';
+                hintEl.textContent = hintText;
+                container.appendChild(hintEl);
+            }
+
+            hintEl.classList.add('is-visible');
+            window.clearTimeout(hideTimer);
+            hideTimer = window.setTimeout(hideHint, 1200);
+        };
+
+        container.addEventListener('wheel', (event) => {
+            if (event.ctrlKey || event.metaKey) {
+                hideHint();
+                return;
+            }
+
+            event.stopImmediatePropagation();
+            showHint();
+        }, { capture: true });
+    };
+
+    /**
+     * En Mac el aviso usa ⌘ en lugar de Ctrl.
+     *
+     * @param {string} text Texto con la palabra Ctrl.
+     * @returns {string}
+     */
+    const hintForPlatform = (text) => {
+        const platform = navigator.platform || '';
+        const ua = navigator.userAgent || '';
+        const apple = /Mac|iPhone|iPad|iPod/.test(platform) || /Mac OS|iPhone|iPad/.test(ua);
+
+        return apple ? text.replace('Ctrl', '⌘') : text;
+    };
+
     const initMaps = () => {
         if (typeof L === 'undefined') {
             return;
@@ -140,6 +200,10 @@
             }
 
             const map = L.map(el).setView([lat, lng], zoom);
+
+            if (el.dataset.zoomNeedsCtrlkey === '1') {
+                bindCtrlWheelZoom(map, hintForPlatform(el.dataset.zoomCtrlHint || ''));
+            }
 
             L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
                 attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>',

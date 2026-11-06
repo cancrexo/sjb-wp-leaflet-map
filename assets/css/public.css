@@ -3,3 +3,28 @@
     max-width: 100%;
     z-index: 1;
 }
+
+/* Aviso al usar la rueda sin Ctrl (opción zoom_needs_ctrlkey). */
+.sjb-leaflet-zoom-hint {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    z-index: 1000;
+    max-width: 80%;
+    margin: 0;
+    padding: 8px 12px;
+    transform: translate(-50%, -50%);
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.75);
+    color: #fff;
+    font-size: 14px;
+    line-height: 1.3;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s ease;
+}
+
+.sjb-leaflet-zoom-hint.is-visible {
+    opacity: 1;
+}

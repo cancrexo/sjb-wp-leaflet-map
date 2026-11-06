@@ -177,6 +177,16 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
         $icon_map        = SJB_WP_LEAFLET_MAP::$path2assets . 'img/vc-icon-map.png';
         $icon_collection = SJB_WP_LEAFLET_MAP::$path2assets . 'img/vc-icon-collection.png';
 
+        $zoom_ctrl_param = array(
+            'type'        => 'checkbox',
+            'heading'     => __( 'Zoom con la rueda', 'sjb-wp-leaflet-map' ),
+            'param_name'  => 'zoom_needs_ctrlkey',
+            'value'       => array(
+                __( 'Solo con Ctrl (o Comando) pulsado.', 'sjb-wp-leaflet-map' ) => '1',
+            ),
+            'description' => __( 'Si está marcado, la rueda desplaza la página salvo que Ctrl esté pulsado. En Mac también vale Comando. Los botones + y − del mapa siguen igual.', 'sjb-wp-leaflet-map' ),
+        );
+
         $shortcodes = array(
             array(
                 'base'        => 'sjb_leaflet_map',
@@ -201,6 +211,7 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
                         'edit_field_class' => 'vc_col-sm-4',
                     ),
                     self::get_vc_zoom_param(),
+                    $zoom_ctrl_param,
                     array(
                         'type'             => 'textfield',
                         'heading'          => __( 'Ancho', 'sjb-wp-leaflet-map' ),
@@ -280,6 +291,7 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
                         'edit_field_class' => 'vc_col-sm-4',
                     ),
                     self::get_vc_zoom_param(),
+                    $zoom_ctrl_param,
                     array(
                         'type'             => 'textfield',
                         'heading'          => __( 'Ancho', 'sjb-wp-leaflet-map' ),
@@ -401,6 +413,39 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
     }
 
     /**
+     * Atributos data-* del zoom con Ctrl, o cadena vacía si está apagado.
+     *
+     * Acepta el shortcode («1», «true», «yes», «on»), el checkbox de WPBakery
+     * y el booleano del bloque de Gutenberg.
+     *
+     * @param mixed $value Valor recibido.
+     */
+    private static function zoom_ctrl_data_attr( $value ): string {
+        $on = false;
+
+        if ( is_bool( $value ) ) {
+            $on = $value;
+        } elseif ( is_numeric( $value ) ) {
+            $on = 1 === (int) $value;
+        } else {
+            $raw = strtolower( trim( (string) $value ) );
+            $on  = in_array( $raw, array( '1', 'true', 'yes', 'on' ), true );
+        }
+
+        if ( ! $on ) {
+            return '';
+        }
+
+        return sprintf(
+            ' data-zoom-needs-ctrlkey="1" data-zoom-ctrl-hint="%s"',
+            esc_attr(
+                /* translators: La palabra Ctrl se cambia por ⌘ en Mac desde public.js. No la traduzcas. */
+                __( 'Usa Ctrl + rueda para hacer zoom', 'sjb-wp-leaflet-map' )
+            )
+        );
+    }
+
+    /**
      * Registra CSS/JS públicos (Leaflet + propio). No los encola aquí.
      */
     public static function register_public_scripts(): void {
@@ -466,7 +511,7 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
     /**
      * Shortcode [sjb_leaflet_map]: contenedor del mapa.
      *
-     * Atributos: lat, lng, zoom, width, height, id, marker_lat, marker_lng, marker_text.
+     * Atributos: lat, lng, zoom, zoom_needs_ctrlkey, width, height, id, marker_lat, marker_lng, marker_text.
      *
      * @param array<string, string>|string $atts Atributos del shortcode.
      */
@@ -475,15 +520,16 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
 
         $atts = shortcode_atts(
             array(
-                'lat'         => '42.4034506',
-                'lng'         => '-8.8091448',
-                'zoom'        => '13',
-                'width'       => '100%',
-                'height'      => '400px',
-                'id'          => 'Leaflet Map',
-                'marker_lat'  => '',
-                'marker_lng'  => '',
-                'marker_text' => '',
+                'lat'                => '42.4034506',
+                'lng'                => '-8.8091448',
+                'zoom'               => '13',
+                'zoom_needs_ctrlkey' => '',
+                'width'              => '100%',
+                'height'             => '400px',
+                'id'                 => 'Leaflet Map',
+                'marker_lat'         => '',
+                'marker_lng'         => '',
+                'marker_text'        => '',
             ),
             $atts,
             'sjb_leaflet_map'
@@ -505,9 +551,10 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
         );
 
         $icon_attrs = self::build_icon_data_attrs( null );
+        $ctrl_attr  = self::zoom_ctrl_data_attr( $atts['zoom_needs_ctrlkey'] );
 
         return sprintf(
-            '<div id="%1$s" class="sjb-leaflet-map" style="%2$s" data-lat="%3$s" data-lng="%4$s" data-zoom="%5$s" data-marker-lat="%6$s" data-marker-lng="%7$s" data-marker-text="%8$s" data-marker-mode="both"%9$s></div>',
+            '<div id="%1$s" class="sjb-leaflet-map" style="%2$s" data-lat="%3$s" data-lng="%4$s" data-zoom="%5$s" data-marker-lat="%6$s" data-marker-lng="%7$s" data-marker-text="%8$s" data-marker-mode="both"%9$s%10$s></div>',
             esc_attr( $map_id ),
             $style,
             esc_attr( $atts['lat'] ),
@@ -516,14 +563,15 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
             esc_attr( $atts['marker_lat'] ),
             esc_attr( $atts['marker_lng'] ),
             esc_attr( $atts['marker_text'] ),
-            $icon_attrs
+            $icon_attrs,
+            $ctrl_attr
         );
     }
 
     /**
      * Shortcode [sjb_leaflet_collection]: mapa con marcadores de una colección.
      *
-     * Atributos: collection (slug o ID), lat, lng, zoom, width, height, id.
+     * Atributos: collection (slug o ID), lat, lng, zoom, zoom_needs_ctrlkey, width, height, id.
      *
      * @param array<string, string>|string $atts Atributos del shortcode.
      */
@@ -532,13 +580,14 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
 
         $atts = shortcode_atts(
             array(
-                'collection' => '',
-                'lat'        => '42.4034506',
-                'lng'        => '-8.8091448',
-                'zoom'       => '13',
-                'width'      => '100%',
-                'height'     => '400px',
-                'id'         => 'Leaflet Collection',
+                'collection'         => '',
+                'lat'                => '42.4034506',
+                'lng'                => '-8.8091448',
+                'zoom'               => '13',
+                'zoom_needs_ctrlkey' => '',
+                'width'              => '100%',
+                'height'             => '400px',
+                'id'                 => 'Leaflet Collection',
             ),
             $atts,
             'sjb_leaflet_collection'
@@ -575,16 +624,18 @@ class SJB_WP_LEAFLET_MAP_Shortcodes {
         }
 
         $icon_attrs = self::build_icon_data_attrs( $collection );
+        $ctrl_attr  = self::zoom_ctrl_data_attr( $atts['zoom_needs_ctrlkey'] );
 
         return sprintf(
-            '<div id="%1$s" class="sjb-leaflet-map" style="%2$s" data-lat="%3$s" data-lng="%4$s" data-zoom="%5$s" data-markers="%6$s"%7$s></div>',
+            '<div id="%1$s" class="sjb-leaflet-map" style="%2$s" data-lat="%3$s" data-lng="%4$s" data-zoom="%5$s" data-markers="%6$s"%7$s%8$s></div>',
             esc_attr( $map_id ),
             $style,
             esc_attr( $atts['lat'] ),
             esc_attr( $atts['lng'] ),
             esc_attr( $zoom ),
             esc_attr( $markers_json ),
-            $icon_attrs
+            $icon_attrs,
+            $ctrl_attr
         );
     }
 

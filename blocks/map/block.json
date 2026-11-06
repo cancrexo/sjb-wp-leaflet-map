@@ -21,6 +21,10 @@
             "type": "string",
             "default": "13"
         },
+        "zoom_needs_ctrlkey": {
+            "type": "boolean",
+            "default": false
+        },
         "width": {
             "type": "string",
             "default": "100%"

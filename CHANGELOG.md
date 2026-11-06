@@ -1,9 +1,10 @@
 # Changelog
 
-Los cambios notables de SJB WP Leaflet Map. La versión del plugin es la de la cabecera (`1.0.0`). El número se fijó el 2026-08-21; los cambios posteriores de esa misma versión llegan hasta el 2026-10-26.
+Los cambios notables de SJB WP Leaflet Map. La versión del plugin es la de la cabecera (`1.0.1`).
 
-## Sin publicar
+## 1.0.1 — 2026-11-06
 
+- Atributo `zoom_needs_ctrlkey` en los dos shortcodes: la rueda solo hace zoom con Ctrl (o Comando). El mismo interruptor está en el bloque y en WPBakery. Sin la tecla, la página sigue desplazándose y el mapa muestra un aviso.
 - Bloques del editor de bloques, en **SJB Shortcodes**: **SJB Leaflet Map** y **SJB Leaflet Collection**, con los mismos campos que los shortcodes.
 - En el editor se muestra una ficha (centro, zoom, tamaño y, si aplica, marcador o colección). El mapa Leaflet se pinta al ver la página.
 - La ayuda de Ajustes menciona estos bloques junto a WPBakery.
@@ -14,7 +15,7 @@ Los cambios notables de SJB WP Leaflet Map. La versión del plugin es la de la c
 - Icono propio en WPBakery para el mapa sencillo y otro para la colección.
 - Aviso en el admin si no se pueden crear las tablas. El esquema se crea al activar el plugin.
 - El autor queda como nota al pie, alineada a la derecha, en la pantalla de Ajustes.
-- Importar y exportar colecciones en JSON, GeoJSON y KML, con miniatura del pin.
+- Importar colecciones en JSON, GeoJSON y KML, y exportarlas también en KMZ, con miniatura del pin.
 - Icono por marcador: el de la colección o uno propio. La pestaña **Info** muestra el entorno (versión, servidor, PHP, base de datos, memoria, WordPress y WooCommerce).
 - Icono del mapa: el de Leaflet o una imagen de la mediateca, por colección.
 - Shortcode `[sjb_leaflet_collection]`: centro del mapa y marcadores activos de una colección (slug o ID). El mismo elemento está en WPBakery.

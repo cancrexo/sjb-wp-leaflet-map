@@ -7,7 +7,7 @@
 
     const { registerBlockType, getBlockType } = wp.blocks;
     const { InspectorControls, useBlockProps } = wp.blockEditor;
-    const { PanelBody, TextControl, TextareaControl, SelectControl } = wp.components;
+    const { PanelBody, TextControl, TextareaControl, SelectControl, ToggleControl } = wp.components;
     const { createElement: el, Fragment } = wp.element;
     const { __, sprintf } = wp.i18n;
 
@@ -63,21 +63,29 @@
      *
      * @param {Object} attributes Atributos.
      */
-    const summaryLines = (attributes) => [
-        sprintf(
-            /* translators: 1: latitud, 2: longitud, 3: zoom */
-            __('Centro: %1$s, %2$s · zoom %3$s', 'sjb-wp-leaflet-map'),
-            attributes.lat,
-            attributes.lng,
-            attributes.zoom
-        ),
-        sprintf(
-            /* translators: 1: ancho, 2: alto */
-            __('Tamaño: %1$s × %2$s', 'sjb-wp-leaflet-map'),
-            attributes.width,
-            attributes.height
-        ),
-    ];
+    const summaryLines = (attributes) => {
+        const lines = [
+            sprintf(
+                /* translators: 1: latitud, 2: longitud, 3: zoom */
+                __('Centro: %1$s, %2$s · zoom %3$s', 'sjb-wp-leaflet-map'),
+                attributes.lat,
+                attributes.lng,
+                attributes.zoom
+            ),
+            sprintf(
+                /* translators: 1: ancho, 2: alto */
+                __('Tamaño: %1$s × %2$s', 'sjb-wp-leaflet-map'),
+                attributes.width,
+                attributes.height
+            ),
+        ];
+
+        if (attributes.zoom_needs_ctrlkey) {
+            lines.push(__('Zoom con la rueda: solo con Ctrl.', 'sjb-wp-leaflet-map'));
+        }
+
+        return lines;
+    };
 
     /**
      * Campos de mapa compartidos (centro, zoom, tamaño e id).
@@ -105,6 +113,12 @@
         }),
         textField(__('ID del contenedor', 'sjb-wp-leaflet-map'), 'id', attributes, setAttributes, {
             help: __('Se sanitiza a un id HTML válido.', 'sjb-wp-leaflet-map'),
+        }),
+        el(ToggleControl, {
+            label: __('Zoom con la rueda solo con Ctrl', 'sjb-wp-leaflet-map'),
+            help: __('Sin la tecla, la rueda desplaza la página. En Mac también vale Comando. Los botones + y − siguen igual.', 'sjb-wp-leaflet-map'),
+            checked: !!attributes.zoom_needs_ctrlkey,
+            onChange: (value) => setAttributes({ zoom_needs_ctrlkey: !!value }),
         })
     );
 
